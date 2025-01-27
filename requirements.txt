@@ -1,0 +1,7 @@
+fastapi
+uvicorn
+hnswlib
+torch
+numpy
+boto3
+pydantic
