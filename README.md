@@ -36,3 +36,16 @@ A high-performance document retrieval system that leverages HNSWlib, FastAPI, an
    ```bash
    git clone https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval.git
    cd vector-similarity-search-for-Document-Retrieval
+
+2. Setup a Virtual Environment:
+   ```bash
+   python -m venv venv
+   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
+3. Install dependencies
+    ```bash
+    pip install -r requirements.txt
+
+
+
+
+ 
