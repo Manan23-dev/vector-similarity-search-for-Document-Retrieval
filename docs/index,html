@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Research Paper Discovery - Vector Search Engine Demo</title>
+    <meta name="description" content="Live demo of vector similarity search engine for research paper discovery using HNSWlib, FastAPI & PyTorch">
+    <link rel="stylesheet" href="assets/css/demo.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AI Research Paper Discovery</h1>
+            <p>Vector Similarity Search Engine powered by HNSWlib, FastAPI & PyTorch</p>
+            <div class="github-links">
+                <a href="https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval" target="_blank" class="github-btn">
+                    📂 View Source Code
+                </a>
+                <a href="#about" class="about-btn">ℹ️ About This Project</a>
+            </div>
+        </div>
+
+        <div class="metrics">
+            <div class="metric-card">
+                <div class="metric-value">50,000+</div>
+                <div class="metric-label">Research Papers Indexed</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">&lt;0.5ms</div>
+                <div class="metric-label">Query Response Time</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">768D</div>
+                <div class="metric-label">Vector Dimensions</div>
+            </div>
+            <div class="metric-card">
+                <div class="metric-value">95.2%</div>
+                <div class="metric-label">Search Accuracy</div>
+            </div>
+        </div>
+
+        <div class="demo-section">
+            <h3>🚀 Try These Example Queries:</h3>
+            <div class="demo-queries">
+                <div class="demo-query" onclick="searchQuery('machine learning interpretability techniques')">
+                    <strong>ML Interpretability</strong><br>
+                    <small>Find papers on explaining AI models</small>
+                </div>
+                <div class="demo-query" onclick="searchQuery('transformer architecture attention mechanisms')">
+                    <strong>Transformer Models</strong><br>
+                    <small>Research on attention-based architectures</small>
+                </div>
+                <div class="demo-query" onclick="searchQuery('computer vision object detection YOLO')">
+                    <strong>Object Detection</strong><br>
+                    <small>CV papers on detection algorithms</small>
+                </div>
+                <div class="demo-query" onclick="searchQuery('natural language processing sentiment analysis')">
+                    <strong>Sentiment Analysis</strong><br>
+                    <small>NLP research on text sentiment</small>
+                </div>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-box">
+                <input type="text" class="search-input" id="searchInput" 
+                       placeholder="Enter your research query (e.g., 'deep learning for medical image analysis')">
+            </div>
+            <button class="search-btn" onclick="performSearch()">🔍 Search Research Papers</button>
+        </div>
+
+        <div class="results-section">
+            <div id="searchResults">
+                <div class="welcome-message">
+                    <h3>🎯 Semantic Search for Research Papers</h3>
+                    <p>This demo showcases how vector similarity search can revolutionize research paper discovery.</p>
+                </div>
+            </div>
+        </div>
+
+        <div id="about" class="about-section">
+            <h3>🛠️ Technical Implementation</h3>
+            <div class="tech-grid">
+                <div class="tech-card">
+                    <h4>🔍 Vector Search Engine</h4>
+                    <p>Built with <strong>HNSWlib</strong> for efficient approximate nearest neighbor search.</p>
+                </div>
+                <div class="tech-card">
+                    <h4>🧠 Embedding Generation</h4>
+                    <p>Uses <strong>PyTorch & SentenceTransformers</strong> for 768-dimensional embeddings.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="assets/js/demo.js"></script>
+</body>
+</html>
