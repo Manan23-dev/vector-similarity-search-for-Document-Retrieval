@@ -75,7 +75,10 @@ async function performSearch() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
+            mode: 'cors',
+            credentials: 'omit',
             body: JSON.stringify({
                 query: query,
                 top_k: 5,
@@ -167,7 +170,10 @@ async function performQA() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
+            mode: 'cors',
+            credentials: 'omit',
             body: JSON.stringify({
                 query: query,
                 top_k: 3
@@ -366,7 +372,10 @@ async function performQA() {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
+                'Accept': 'application/json',
             },
+            mode: 'cors',
+            credentials: 'omit',
             body: JSON.stringify({
                 query: query,
                 top_k: 3
