@@ -1,221 +1,298 @@
-# Vector Similarity Search Engine for Document Retrieval
+# Vector Similarity Search for Document Retrieval
 
-🚀 **[Live Demo](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)** | 📖 [Documentation](#installation) | 💻 [Source Code](https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval)
+A scalable RAG-based system with LangChain and Hugging Face, enabling automated document retrieval and intelligent question-answering for large collections of text.
 
-> A high-performance AI-powered research paper discovery platform leveraging HNSWlib, FastAPI, and PyTorch for efficient vector similarity search. Transform how researchers discover relevant papers with semantic understanding and sub-millisecond query times.
+## 🚀 Features
 
-## 🎯 Live Demo Features
+- **Vector Similarity Search**: HNSWlib implementation for fast approximate nearest neighbor search
+- **Hugging Face Embeddings**: Sentence-transformers for semantic text embedding
+- **RAG System**: Retrieval-Augmented Generation for intelligent question answering
+- **FastAPI**: High-performance REST API with automatic documentation
+- **Scalable Architecture**: Designed to handle large document collections
 
-🔗 **[Try the Interactive Demo →](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)**
+## 🏗️ Architecture
 
-- **🧠 Semantic Search**: Find research papers using natural language queries, not just keywords
-- **⚡ Lightning Fast**: Sub-millisecond query processing with 95.2% accuracy
-- **📊 Large Scale**: Indexed database of 50,000+ academic papers
-- **🎨 Interactive UI**: Try example queries or search your own research topics
-- **📈 Real-time Metrics**: Live performance indicators and similarity scoring
+```
+┌─────────────────┐    ┌──────────────────┐    ┌─────────────────┐
+│   Documents     │───▶│   Embedder      │───▶│   Vector Index  │
+│   (Text Files)  │    │ (Hugging Face)  │    │   (HNSWlib)     │
+└─────────────────┘    └──────────────────┘    └─────────────────┘
+                                                         │
+┌─────────────────┐    ┌──────────────────┐             │
+│   Query         │───▶│   FastAPI       │◀────────────┘
+│   (User Input)  │    │   Endpoints      │
+└─────────────────┘    └──────────────────┘
+```
 
-![Demo Preview](https://img.shields.io/badge/Demo-Live-brightgreen?style=for-the-badge&logo=github-pages)
-![Performance](https://img.shields.io/badge/Query_Time-<0.5ms-blue?style=for-the-badge)
-![Accuracy](https://img.shields.io/badge/Accuracy-95.2%25-success?style=for-the-badge)
+## 📋 Requirements
 
----
-
-## 🚀 Key Achievements
-
-- ⚡ **Sub-millisecond query times** using optimized HNSW indexing
-- 🧠 **768-dimensional embeddings** with SentenceTransformers
-- 📊 **95.2% search accuracy** on semantic similarity tasks
-- 🔄 **Scalable architecture** supporting 50,000+ documents
-- ☁️ **Cloud deployment** with AWS S3, Lambda, and Kubernetes
-- 🎯 **Real-world application** solving research paper discovery challenges
-
----
-
-## 🎬 Demo Highlights
-
-### Try These Example Queries:
-- `"machine learning interpretability techniques"`
-- `"transformer architecture attention mechanisms"`
-- `"computer vision object detection YOLO"`
-- `"natural language processing sentiment analysis"`
-- `"deep reinforcement learning robotics"`
-
-The system understands **semantic meaning**, not just keyword matching!
-
----
-
-## 🛠️ Features
-
-- **Vector Similarity Search**: Uses HNSWlib for fast and accurate similarity search
-- **High-Dimensional Embedding Generation**: Generates embeddings with `SentenceTransformers` (PyTorch-based)
-- **Scalable Deployment**: Fully containerized with Docker and deployable to Kubernetes
-- **Efficient Operations**: Supports parallel indexing, clustering, and cloud integrations (AWS S3, Lambda)
-- **RESTful API**: Built with FastAPI, providing endpoints for embedding and similarity search
-- **Interactive Demo**: Live web interface showcasing real-world applications
-
----
-
-## 🏗️ Tech Stack
-
-### Core Technologies
-- **🔍 Search Engine**: HNSWlib for approximate nearest neighbor search
-- **🧠 ML Framework**: PyTorch with SentenceTransformers
-- **⚡ API Framework**: FastAPI for high-performance REST APIs
-- **🐳 Containerization**: Docker for consistent deployment
-- **☁️ Cloud Services**: AWS S3, Lambda for scalable infrastructure
-- **🚀 Orchestration**: Kubernetes for container management
-
-### Frontend Demo
-- **🎨 UI/UX**: Modern responsive design with CSS3 animations
-- **⚙️ Functionality**: Vanilla JavaScript with real-time search simulation
-- **📱 Responsive**: Mobile-friendly interface
-- **🎯 Accessibility**: WCAG compliant design
-
----
-
-## 🚀 Quick Start
-
-### Prerequisites
 - Python 3.9+
-- Docker
-- Git
+- FastAPI
+- sentence-transformers
+- hnswlib
+- langchain
+- torch
+- transformers
 
-### Installation Steps
+## 🛠️ Installation
 
-1. **Clone the repository**:
+1. **Clone the repository**
    ```bash
-   git clone https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval.git
+   git clone <repository-url>
    cd vector-similarity-search-for-Document-Retrieval
    ```
 
-2. **Setup Virtual Environment**:
-   ```bash
-   python -m venv venv
-   source venv/bin/activate  # On Windows: .\venv\Scripts\activate
-   ```
-
-3. **Install Dependencies**:
+2. **Install dependencies**
    ```bash
    pip install -r requirements.txt
    ```
 
-4. **Run the Demo Locally**:
+3. **Prepare sample data**
    ```bash
-   # For the web demo
-   cd docs
-   python -m http.server 8000
-   # Visit http://localhost:8000
-   
-   # For the API (if implemented)
-   uvicorn main:app --reload
+   # Sample documents are already included in example_data/documents.txt
    ```
 
----
+## 🚀 Quick Start
 
-## 📊 Performance Metrics
+1. **Run the system test**
+   ```bash
+   python3 test_system.py
+   ```
 
-| Metric | Value | Description |
-|--------|-------|-------------|
-| **Query Speed** | <0.5ms | Average response time for similarity search |
-| **Dataset Size** | 50,000+ | Number of indexed research papers |
-| **Vector Dimensions** | 768D | Semantic embedding dimensionality |
-| **Search Accuracy** | 95.2% | Precision in finding relevant papers |
-| **Scalability** | Kubernetes | Horizontal scaling capability |
+2. **Start the API server**
+   ```bash
+   python3 main.py
+   ```
 
----
+3. **Access the API documentation**
+   - Open your browser to `http://localhost:8000/docs`
+   - Interactive API documentation with Swagger UI
 
-## 🌟 Real-World Applications
+## 📚 API Endpoints
 
-This vector similarity search engine can be applied to:
+### Core Endpoints
 
-1. **📚 Academic Research**: Help researchers discover relevant papers 10x faster
-2. **📖 Literature Reviews**: Automate finding related work and citations
-3. **🔬 Knowledge Discovery**: Uncover hidden connections between research areas
-4. **⚖️ Patent Search**: Find similar patents and prior art efficiently
-5. **📰 Content Recommendation**: Suggest relevant articles and documents
-6. **🏢 Enterprise Search**: Internal document and knowledge base search
+- **GET `/`** - Welcome message and API information
+- **GET `/health`** - Health check endpoint
+- **GET `/docs`** - Interactive API documentation
 
----
+### Vector Search Endpoints
 
-## 🏗️ Architecture Overview
+- **POST `/api/search`** - Vector similarity search
+  ```json
+  {
+    "query": "machine learning algorithms",
+    "top_k": 5,
+    "threshold": 0.0
+  }
+  ```
+
+- **POST `/api/qa`** - Question answering with RAG
+  ```json
+  {
+    "query": "What is machine learning?",
+    "top_k": 3
+  }
+  ```
+
+- **GET `/api/stats`** - Index statistics
+- **POST `/api/reindex`** - Rebuild vector index
+
+## 🔧 Usage Examples
+
+### 1. Vector Similarity Search
+
+```bash
+curl -X POST "http://localhost:8000/api/search" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "deep learning neural networks",
+    "top_k": 3,
+    "threshold": 0.3
+  }'
+```
+
+**Response:**
+```json
+{
+  "query": "deep learning neural networks",
+  "results": [
+    {
+      "document": "Deep learning neural networks for computer vision...",
+      "document_id": "doc_1",
+      "score": 0.8234,
+      "distance": 0.1766
+    }
+  ],
+  "total_found": 3,
+  "returned": 3
+}
+```
+
+### 2. Question Answering (RAG)
+
+```bash
+curl -X POST "http://localhost:8000/api/qa" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "query": "What is machine learning?",
+    "top_k": 2
+  }'
+```
+
+**Response:**
+```json
+{
+  "question": "What is machine learning?",
+  "answer": "Based on the available information: Machine learning is a subset of artificial intelligence...",
+  "sources": [...],
+  "context_used": "Introduction to machine learning algorithms..."
+}
+```
+
+### 3. Index Statistics
+
+```bash
+curl -X GET "http://localhost:8000/api/stats"
+```
+
+**Response:**
+```json
+{
+  "index_stats": {
+    "total_documents": 10,
+    "embedding_dimension": 384,
+    "max_elements": 20000,
+    "current_size": 10
+  },
+  "embedder_info": {
+    "model": "all-MiniLM-L6-v2",
+    "dimension": 384
+  },
+  "status": "ready"
+}
+```
+
+## 🧪 Testing
+
+### Run System Tests
+```bash
+python3 test_system.py
+```
+
+### Run API Tests
+```bash
+python3 -m pytest tests/tests_endpoints.py -v
+```
+
+## 📁 Project Structure
 
 ```
-┌─────────────────┐    ┌─────────────────┐    ┌─────────────────┐
-│   Web Interface │────│   FastAPI       │────│   Vector Store  │
-│   (Demo UI)     │    │   (REST API)    │    │   (HNSWlib)     │
-└─────────────────┘    └─────────────────┘    └─────────────────┘
-                                │
-                       ┌─────────────────┐
-                       │   Embedding     │
-                       │   Generator     │
-                       │ (SentenceTransf)│
-                       └─────────────────┘
-                                │
-                       ┌─────────────────┐
-                       │   Document      │
-                       │   Processor     │
-                       │   (PyTorch)     │
-                       └─────────────────┘
+├── src/
+│   ├── api/
+│   │   └── endpoints.py          # FastAPI endpoints
+│   ├── embeddings/
+│   │   └── embedder.py          # Hugging Face embeddings
+│   └── index/
+│       └── index_manager.py     # HNSWlib vector index
+├── example_data/
+│   └── documents.txt            # Sample documents
+├── tests/
+│   └── tests_endpoints.py       # API tests
+├── data/                        # Vector index storage
+├── main.py                      # FastAPI application
+├── test_system.py              # System integration tests
+├── requirements.txt            # Dependencies
+└── README.md                   # This file
 ```
 
----
+## 🔧 Configuration
 
-## 🛠️ Development Roadmap
+### Embedding Model
+The system uses `all-MiniLM-L6-v2` by default. To change the model:
 
-### ✅ Completed
-- [x] Core vector similarity search engine
-- [x] FastAPI REST API endpoints
-- [x] Docker containerization
-- [x] Interactive web demo
-- [x] GitHub Pages deployment
-- [x] Performance optimization with HNSW
+```python
+# In src/embeddings/embedder.py
+embedder = Embedder(model_name='your-preferred-model')
+```
 
-### 🚧 In Progress
-- [ ] Real-time API integration with demo
-- [ ] Advanced filtering and faceted search
-- [ ] User authentication and saved searches
+### Index Parameters
+Adjust HNSWlib parameters in `src/index/index_manager.py`:
 
-### 🔮 Future Plans
-- [ ] Multi-modal search (text + images)
-- [ ] Citation network analysis
-- [ ] Federated search across databases
-- [ ] Machine learning model fine-tuning interface
+```python
+index_manager = IndexManager(
+    dim=384,           # Embedding dimension
+    max_elements=20000, # Maximum documents
+    index_path="data/vector_index"  # Storage path
+)
+```
 
----
+## 🚀 Deployment
+
+### Local Development
+```bash
+python3 main.py
+```
+
+### Production (with uvicorn)
+```bash
+uvicorn main:app --host 0.0.0.0 --port 8000 --workers 4
+```
+
+### Docker
+```bash
+docker build -t vector-search-api .
+docker run -p 8000:8000 vector-search-api
+```
+
+## 📊 Performance
+
+- **Embedding Generation**: ~100ms per document (CPU)
+- **Vector Search**: ~1-5ms per query (10K documents)
+- **Memory Usage**: ~50MB for 10K documents (384-dim embeddings)
+- **Index Size**: ~15MB for 10K documents
+
+## 🔍 Technical Details
+
+### Embeddings
+- **Model**: `all-MiniLM-L6-v2` (384 dimensions)
+- **Provider**: Hugging Face sentence-transformers
+- **Backend**: PyTorch
+
+### Vector Search
+- **Algorithm**: HNSW (Hierarchical Navigable Small World)
+- **Library**: hnswlib
+- **Distance Metric**: Cosine similarity
+- **Search Parameters**: ef=50, M=16
+
+### RAG Implementation
+- **Retrieval**: Vector similarity search
+- **Generation**: Simple keyword-based (extensible to LLMs)
+- **Context**: Top-k relevant documents
 
 ## 🤝 Contributing
 
-Contributions are welcome! Please feel free to submit a Pull Request. For major changes, please open an issue first to discuss what you would like to change.
-
 1. Fork the repository
-2. Create your feature branch (`git checkout -b feature/AmazingFeature`)
-3. Commit your changes (`git commit -m 'Add some AmazingFeature'`)
-4. Push to the branch (`git push origin feature/AmazingFeature`)
-5. Open a Pull Request
-
----
+2. Create a feature branch
+3. Make your changes
+4. Add tests
+5. Submit a pull request
 
 ## 📄 License
 
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details.
+This project is licensed under the MIT License.
+
+## 🙏 Acknowledgments
+
+- [Hugging Face](https://huggingface.co/) for sentence-transformers
+- [hnswlib](https://github.com/nmslib/hnswlib) for vector search
+- [FastAPI](https://fastapi.tiangolo.com/) for the web framework
+- [LangChain](https://langchain.com/) for RAG framework
+
+## 📞 Support
+
+For questions and support, please open an issue in the repository.
 
 ---
 
-## 👨‍💻 Author
-
-**Manan** - [GitHub](https://github.com/Manan23-dev) | [LinkedIn](https://linkedin.com/in/your-profile)
-
-⭐ **Star this repository** if you found it helpful!
-
----
-
-## 🔗 Links
-
-- 🚀 **[Live Demo](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)**
-- 📂 **[Source Code](https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval)**
-- 📖 **[Documentation](./docs/README.md)**
-- 🐛 **[Report Issues](https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval/issues)**
-
----
-
-*Built with ❤️ for the research community • Transforming how we discover knowledge*
+**Built with ❤️ for scalable document retrieval and intelligent question answering**
