@@ -22,9 +22,15 @@ app = FastAPI(
 
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],
+    allow_origins=[
+        "*",  # Allow all origins for development
+        "https://*.github.io",  # GitHub Pages
+        "https://manan23-dev.github.io",  # Your specific GitHub Pages
+        "http://localhost:3000",  # Local development
+        "http://localhost:8000",  # Local development
+    ],
     allow_credentials=True,
-    allow_methods=["*"],
+    allow_methods=["GET", "POST", "PUT", "DELETE", "OPTIONS"],
     allow_headers=["*"],
 )
 
