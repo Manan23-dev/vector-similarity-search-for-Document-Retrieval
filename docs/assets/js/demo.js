@@ -1,7 +1,7 @@
 // Configuration for API endpoints
 const API_CONFIG = {
     // Change this to your deployed backend URL
-    BASE_URL: 'https://your-backend-url.railway.app', // Replace with your actual backend URL
+    BASE_URL: 'https://your-app-name.vercel.app', // Replace with your actual Vercel URL
     LOCAL_URL: 'http://localhost:8000', // For local development
     ENDPOINTS: {
         SEARCH: '/api/search',
