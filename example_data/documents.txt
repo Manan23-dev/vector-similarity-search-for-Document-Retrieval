@@ -1,0 +1,10 @@
+Introduction to machine learning algorithms and their applications in data science. Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data.
+Deep learning neural networks for computer vision and natural language processing. Deep learning uses multiple layers of neural networks to model complex patterns in data.
+Python programming fundamentals for beginners with practical examples. Python is a versatile programming language widely used in data science, web development, and automation.
+Vector similarity search and information retrieval systems overview. Vector similarity search enables finding semantically similar documents using embedding representations.
+FastAPI framework for building high-performance REST APIs with Python. FastAPI is a modern web framework that provides automatic API documentation and high performance.
+HNSWlib library for efficient approximate nearest neighbor search. HNSWlib implements the Hierarchical Navigable Small World algorithm for fast similarity search.
+Sentence transformers for semantic text embedding and similarity. Sentence transformers convert text into dense vector representations for semantic similarity tasks.
+PyTorch deep learning framework tutorial and best practices. PyTorch is a popular deep learning framework that provides dynamic computation graphs and GPU acceleration.
+Natural language processing techniques for text analysis and understanding. NLP involves processing and analyzing human language using computational methods.
+Retrieval-Augmented Generation (RAG) systems for question answering. RAG combines retrieval of relevant documents with generation of answers using language models.
