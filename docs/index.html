@@ -76,7 +76,10 @@
                 <input type="text" class="search-input" id="searchInput" 
                        placeholder="Enter your research query (e.g., 'deep learning for medical image analysis')">
             </div>
-            <button class="search-btn" onclick="performSearch()">🔍 Search Research Papers</button>
+            <div class="search-buttons">
+                <button class="search-btn" onclick="performSearch()">🔍 Search Documents</button>
+                <button class="toggle-btn" onclick="toggleMode()">🤖 Switch to Q&A</button>
+            </div>
         </div>
 
         <div class="results-section">
