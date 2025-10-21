@@ -13,4 +13,3 @@ aws/
 kubernetes/
 Dockerfile
 Procfile
-runtime.txt
