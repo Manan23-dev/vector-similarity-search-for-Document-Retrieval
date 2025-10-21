@@ -1,7 +1,7 @@
 // Configuration for API endpoints
 const API_CONFIG = {
-    // Change this to your deployed backend URL
-    BASE_URL: 'https://your-app-name.vercel.app', // Replace with your actual Vercel URL
+    // Your deployed Render backend URL
+    BASE_URL: 'https://vector-similarity-search-for-document.onrender.com',
     LOCAL_URL: 'http://localhost:8000', // For local development
     ENDPOINTS: {
         SEARCH: '/api/search',
