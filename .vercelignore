@@ -1,0 +1,16 @@
+# Ignore development files
+frontend/
+tests/
+data/
+*.pyc
+__pycache__/
+.pytest_cache/
+.git/
+.gitignore
+README.md
+docs/
+aws/
+kubernetes/
+Dockerfile
+Procfile
+runtime.txt
