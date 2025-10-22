@@ -1,13 +1,17 @@
-# Jekyll configuration for GitHub Pages
+# Jekyll configuration to serve static files
 title: "AI Research Paper Discovery"
-description: "Live demo of vector similarity search engine for research paper discovery"
+description: "Live demo of vector similarity search engine"
 baseurl: ""
 url: "https://manan23-dev.github.io"
 
-# Disable Jekyll processing for specific files
+# Disable Jekyll processing
+plugins: []
+markdown: kramdown
+highlighter: rouge
+
+# Exclude everything except what we want
 exclude:
-  - README.md
-  - DEPLOYMENT.md
+  - README.md.backup
   - RENDER_DEPLOYMENT.md
   - tests/
   - src/
@@ -19,24 +23,10 @@ exclude:
   - nginx.conf
   - .dockerignore
   - .gitignore
-  - test.html
-  - demo.html
+  - app.html
 
-# Include only necessary files
+# Include only what we need
 include:
   - assets/
   - index.html
   - .nojekyll
-
-# Disable Jekyll plugins
-plugins: []
-
-# Use kramdown for markdown processing
-markdown: kramdown
-highlighter: rouge
-
-# Disable Jekyll processing
-safe: false
-lsi: false
-excerpt_separator: "\n\n"
-incremental: false
