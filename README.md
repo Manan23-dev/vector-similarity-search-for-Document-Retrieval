@@ -4,7 +4,7 @@ A scalable RAG-based system with LangChain and Hugging Face, enabling automated 
 
 ## 🚀 Live Demo
 
-**Frontend**: [https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/)  
+**Frontend**: [https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)  
 **Backend API**: [https://vector-similarity-search-for-document.onrender.com](https://vector-similarity-search-for-document.onrender.com)  
 **API Documentation**: [https://vector-similarity-search-for-document.onrender.com/docs](https://vector-similarity-search-for-document.onrender.com/docs)
 
