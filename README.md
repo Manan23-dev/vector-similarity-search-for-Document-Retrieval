@@ -2,6 +2,13 @@
 
 A high-performance RAG-based system with LangChain and Hugging Face, enabling automated document retrieval and intelligent question-answering for large collections of text.
 
+## 🚀 Live Demo
+
+**Click here to access the working demo with search functionality:**
+**[https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/)**
+
+*Note: If the above link doesn't work, try: [https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)*
+
 ## Features
 
 - **Vector Search**: HNSWlib for fast similarity search
