@@ -1,573 +1,498 @@
-// Configuration for API endpoints - Updated to use Render only
-const API_CONFIG = {
-    // Your deployed Render backend URL
-    BASE_URL: 'https://vector-similarity-search-for-document.onrender.com',
-    LOCAL_URL: 'http://localhost:8000', // For local development
-    ENDPOINTS: {
-        SEARCH: '/api/search',
-        QA: '/api/qa',
-        STATS: '/api/stats',
-        HEALTH: '/health'
+// Vector Similarity Search Engine - Frontend Demo
+// UPDATED: Complete rewrite with all requested features
+
+// Configuration
+const CONFIG = {
+    API_BASE_URL: 'https://vector-similarity-search-for-document.onrender.com',
+    LOCAL_URL: 'http://localhost:8000',
+    RESULTS_PER_PAGE: 10,
+    DEBOUNCE_DELAY: 200,
+    SIMULATED_LATENCY_MIN: 100,
+    SIMULATED_LATENCY_MAX: 200
+};
+
+// Global state
+let papersData = [];
+let filteredPapers = [];
+let currentPage = 1;
+let totalPages = 1;
+let searchStartTime = 0;
+let isSearching = false;
+
+// DOM elements
+const elements = {
+    searchInput: document.getElementById('searchInput'),
+    searchButton: document.getElementById('searchButton'),
+    resultsContainer: document.getElementById('resultsContainer'),
+    resultsTitle: document.getElementById('resultsTitle'),
+    resultsCount: document.getElementById('resultsCount'),
+    loadingState: document.getElementById('loadingState'),
+    emptyState: document.getElementById('emptyState'),
+    pagination: document.getElementById('pagination'),
+    prevPage: document.getElementById('prevPage'),
+    nextPage: document.getElementById('nextPage'),
+    paginationInfo: document.getElementById('paginationInfo'),
+    querySpeed: document.getElementById('querySpeed'),
+    darkModeToggle: document.getElementById('darkModeToggle'),
+    yearRange: document.getElementById('yearRange'),
+    venueFilter: document.getElementById('venueFilter'),
+    authorFilter: document.getElementById('authorFilter')
+};
+
+// Utility functions
+const utils = {
+    // Debounce function
+    debounce(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    },
+
+    // Sanitize HTML content
+    sanitizeHtml(str) {
+        const div = document.createElement('div');
+        div.textContent = str;
+        return div.innerHTML;
+    },
+
+    // Highlight search terms
+    highlight(text, query) {
+        if (!query.trim()) return utils.sanitizeHtml(text);
+        
+        const sanitizedText = utils.sanitizeHtml(text);
+        const sanitizedQuery = utils.sanitizeHtml(query.toLowerCase());
+        const regex = new RegExp(`(${sanitizedQuery.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')})`, 'gi');
+        
+        return sanitizedText.replace(regex, '<mark>$1</mark>');
+    },
+
+    // Tokenize text for similarity calculation
+    tokenize(text) {
+        return text.toLowerCase()
+            .replace(/[^\w\s]/g, '')
+            .split(/\s+/)
+            .filter(word => word.length > 2);
+    },
+
+    // Calculate cosine similarity (simplified for demo)
+    cosineSimilarity(vecA, vecB) {
+        if (vecA.length !== vecB.length) return 0;
+        
+        let dotProduct = 0;
+        let normA = 0;
+        let normB = 0;
+        
+        for (let i = 0; i < vecA.length; i++) {
+            dotProduct += vecA[i] * vecB[i];
+            normA += vecA[i] * vecA[i];
+            normB += vecB[i] * vecB[i];
+        }
+        
+        return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
+    },
+
+    // Calculate weighted token overlap similarity
+    calculateTokenSimilarity(paper, query) {
+        const queryTokens = utils.tokenize(query);
+        const titleTokens = utils.tokenize(paper.title);
+        const abstractTokens = utils.tokenize(paper.abstract);
+        const keywordTokens = paper.keywords.flatMap(k => utils.tokenize(k));
+        
+        let score = 0;
+        let totalWeight = 0;
+        
+        // Title weight: 1.5x
+        const titleMatches = queryTokens.filter(qt => titleTokens.includes(qt)).length;
+        score += titleMatches * 1.5;
+        totalWeight += titleTokens.length * 1.5;
+        
+        // Keywords weight: 1.3x
+        const keywordMatches = queryTokens.filter(qt => keywordTokens.includes(qt)).length;
+        score += keywordMatches * 1.3;
+        totalWeight += keywordTokens.length * 1.3;
+        
+        // Abstract weight: 1x
+        const abstractMatches = queryTokens.filter(qt => abstractTokens.includes(qt)).length;
+        score += abstractMatches * 1;
+        totalWeight += abstractTokens.length * 1;
+        
+        return totalWeight > 0 ? Math.min(score / totalWeight, 1) : 0;
+    },
+
+    // Simulate API latency
+    async simulateLatency() {
+        const delay = Math.random() * (CONFIG.SIMULATED_LATENCY_MAX - CONFIG.SIMULATED_LATENCY_MIN) + CONFIG.SIMULATED_LATENCY_MIN;
+        await new Promise(resolve => setTimeout(resolve, delay));
     }
 };
 
-// Determine which API URL to use
-const API_URL = window.location.hostname === 'localhost' ? API_CONFIG.LOCAL_URL : API_CONFIG.BASE_URL;
-
-// Global state
-let currentMode = 'search'; // 'search' or 'qa'
-
-// Fallback data for demo purposes
-const fallbackPapers = [
-    {
-        title: "Introduction to Machine Learning",
-        abstract: "Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data.",
-        similarity: 0.95,
-        keywords: ["Machine Learning", "AI", "Algorithms", "Data Science"],
-        authors: "Dr. Smith",
-        year: "2024",
-        venue: "AI Journal"
-    },
-    {
-        title: "Deep Learning Neural Networks",
-        abstract: "Deep learning uses multiple layers of neural networks to model complex patterns in data.",
-        similarity: 0.88,
-        keywords: ["Deep Learning", "Neural Networks", "AI", "Pattern Recognition"],
-        authors: "Prof. Johnson",
-        year: "2024",
-        venue: "Deep Learning Review"
-    },
-    {
-        title: "Python Programming Fundamentals",
-        abstract: "Python is a versatile programming language widely used in data science, web development, and automation.",
-        similarity: 0.82,
-        keywords: ["Python", "Programming", "Data Science", "Web Development"],
-        authors: "Jane Doe",
-        year: "2023",
-        venue: "Programming Today"
+// Data loader module
+const dataLoader = {
+    async loadPapers() {
+        try {
+            const response = await fetch('assets/data/sample-papers.json');
+            const data = await response.json();
+            papersData = data.papers;
+            filteredPapers = [...papersData];
+            console.log(`Loaded ${papersData.length} papers`);
+        } catch (error) {
+            console.error('Error loading papers:', error);
+            papersData = [];
+            filteredPapers = [];
+        }
     }
-];
+};
 
-// Execute demo search function - fills search box and performs search immediately
-async function executeDemoSearch(query) {
-    // Fill the search input
-    document.getElementById('searchInput').value = query;
-    
-    // Add visual feedback to the clicked demo query
-    const clickedElement = event.target.closest('.demo-query');
-    if (clickedElement) {
-        clickedElement.style.transform = 'scale(0.95)';
-        clickedElement.style.backgroundColor = '#667eea';
-        clickedElement.style.color = 'white';
+// Search engine module
+const searchEngine = {
+    async search(query) {
+        if (!query.trim()) {
+            filteredPapers = [...papersData];
+            return filteredPapers;
+        }
+
+        searchStartTime = performance.now();
         
-        // Reset after animation
-        setTimeout(() => {
-            clickedElement.style.transform = '';
-            clickedElement.style.backgroundColor = '';
-            clickedElement.style.color = '';
-        }, 200);
-    }
-    
-    // Scroll to search results section
-    document.getElementById('searchResults').scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'start' 
-    });
-    
-    // Execute the search based on current mode
-    if (currentMode === 'search') {
-        await performSearch();
-    } else {
-        await performQA();
-    }
-}
-
-// Search query function for demo buttons (legacy - now calls executeDemoSearch)
-function searchQuery(query) {
-    executeDemoSearch(query);
-}
-
-// Main search function
-async function performSearch() {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) {
-        alert('Please enter a search query');
-        return;
-    }
-
-    const resultsDiv = document.getElementById('searchResults');
-    
-    // Show loading
-    resultsDiv.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>🔍 Searching through documents using vector similarity...</p>
-            <p>⚡ Computing embeddings with Hugging Face transformers...</p>
-            <p>🧠 Using HNSWlib for fast similarity search...</p>
-        </div>
-    `;
-
-    try {
-        // Try to connect to the actual API
-        const response = await fetch(`${API_URL}${API_CONFIG.ENDPOINTS.SEARCH}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            mode: 'cors',
-            credentials: 'omit',
-            body: JSON.stringify({
-                query: query,
-                top_k: 5,
-                threshold: 0.0
-            })
+        // Simulate API latency
+        await utils.simulateLatency();
+        
+        // Calculate similarity scores
+        const results = papersData.map(paper => {
+            const similarity = utils.calculateTokenSimilarity(paper, query);
+            return {
+                ...paper,
+                similarity: similarity
+            };
         });
 
-        if (response.ok) {
-            const data = await response.json();
-            displayAPIResults(data);
-        } else {
-            throw new Error(`API Error: ${response.status}`);
-        }
-    } catch (error) {
-        console.warn('API not available, using fallback data:', error);
-        // Fallback to demo data
-        setTimeout(() => {
-            displayFallbackResults(query);
-        }, 1000);
-    }
-}
+        // Sort by similarity (descending)
+        filteredPapers = results
+            .filter(paper => paper.similarity > 0)
+            .sort((a, b) => b.similarity - a.similarity);
 
-// Q&A function
-async function performQA() {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) {
-        alert('Please enter a question');
+        // Update query speed metric
+        const queryTime = Math.round(performance.now() - searchStartTime);
+        elements.querySpeed.textContent = `${queryTime}ms`;
+
+        return filteredPapers;
+    },
+
+    applyFilters() {
+        let filtered = [...papersData];
+        
+        // Year range filter
+        const yearRange = elements.yearRange.value;
+        if (yearRange) {
+            const [startYear, endYear] = yearRange.split('-').map(y => parseInt(y));
+            if (yearRange === 'before-2010') {
+                filtered = filtered.filter(paper => paper.year < 2010);
+            } else if (endYear) {
+                filtered = filtered.filter(paper => paper.year >= startYear && paper.year <= endYear);
+            }
+        }
+        
+        // Venue filter
+        const venue = elements.venueFilter.value;
+        if (venue) {
+            filtered = filtered.filter(paper => paper.venue === venue);
+        }
+        
+        // Author filter
+        const author = elements.authorFilter.value.toLowerCase();
+        if (author) {
+            filtered = filtered.filter(paper => 
+                paper.authors.some(a => a.toLowerCase().includes(author))
+            );
+        }
+        
+        filteredPapers = filtered;
+        return filteredPapers;
+    }
+};
+
+// UI module
+const ui = {
+    showLoading() {
+        elements.loadingState.style.display = 'block';
+        elements.resultsContainer.style.display = 'none';
+        elements.emptyState.style.display = 'none';
+        elements.pagination.style.display = 'none';
+    },
+
+    hideLoading() {
+        elements.loadingState.style.display = 'none';
+        elements.resultsContainer.style.display = 'block';
+    },
+
+    showEmpty() {
+        elements.emptyState.style.display = 'block';
+        elements.resultsContainer.style.display = 'none';
+        elements.pagination.style.display = 'none';
+    },
+
+    hideEmpty() {
+        elements.emptyState.style.display = 'none';
+    },
+
+    renderResults(results, page = 1) {
+        const startIndex = (page - 1) * CONFIG.RESULTS_PER_PAGE;
+        const endIndex = startIndex + CONFIG.RESULTS_PER_PAGE;
+        const pageResults = results.slice(startIndex, endIndex);
+        
+        if (pageResults.length === 0) {
+            this.showEmpty();
         return;
     }
 
-    const resultsDiv = document.getElementById('searchResults');
-    
-    // Show loading
-    resultsDiv.innerHTML = `
-        <div class="loading">
-            <div class="spinner"></div>
-            <p>🤖 Generating answer using RAG...</p>
-            <p>🔍 Retrieving relevant documents...</p>
-            <p>🧠 Processing with language model...</p>
+        this.hideEmpty();
+        
+        const query = elements.searchInput.value.trim();
+        const html = pageResults.map(paper => this.createResultCard(paper, query)).join('');
+        elements.resultsContainer.innerHTML = html;
+        
+        // Update pagination
+        this.updatePagination(results.length, page);
+        
+        // Update results count
+        elements.resultsCount.textContent = `${results.length} papers found`;
+    },
+
+    createResultCard(paper, query) {
+        const similarityPercent = (paper.similarity * 100).toFixed(1);
+        const highlightedTitle = utils.highlight(paper.title, query);
+        const highlightedAbstract = utils.highlight(paper.abstract, query);
+        
+        return `
+            <div class="result-card" data-paper-id="${paper.id}">
+                <div class="result-header">
+                    <div class="result-title">${highlightedTitle}</div>
+                    <div class="result-similarity">${similarityPercent}%</div>
+                </div>
+                
+                <div class="result-meta">
+                    <span>📅 ${paper.year}</span>
+                    <span>🏛️ ${paper.venue}</span>
+                    <span>📄 ${paper.id}</span>
+                </div>
+                
+                <div class="result-authors">
+                    <strong>Authors:</strong> ${paper.authors.join(', ')}
+                </div>
+                
+                <div class="result-abstract">
+                    ${highlightedAbstract}
+                </div>
+                
+                <div class="result-keywords">
+                    ${paper.keywords.map(keyword => 
+                        `<span class="keyword-tag">${utils.sanitizeHtml(keyword)}</span>`
+                    ).join('')}
+                </div>
         </div>
     `;
+    },
 
-    try {
-        // Try to connect to the QA API
-        const response = await fetch(`${API_URL}${API_CONFIG.ENDPOINTS.QA}`, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'Accept': 'application/json',
-            },
-            mode: 'cors',
-            credentials: 'omit',
-            body: JSON.stringify({
-                query: query,
-                top_k: 3
-            })
-        });
-
-        if (response.ok) {
-            const data = await response.json();
-            displayQAResults(data);
-        } else {
-            throw new Error(`API Error: ${response.status}`);
+    updatePagination(totalResults, currentPage) {
+        totalPages = Math.ceil(totalResults / CONFIG.RESULTS_PER_PAGE);
+        
+        if (totalPages <= 1) {
+            elements.pagination.style.display = 'none';
+            return;
         }
-    } catch (error) {
-        console.warn('API not available, using fallback data:', error);
-        // Fallback to demo data
-        setTimeout(() => {
-            displayFallbackQA(query);
-        }, 1000);
-    }
-}
-
-// Toggle between search and Q&A modes
-function toggleMode() {
-    const searchBtn = document.querySelector('.search-btn');
-    const toggleBtn = document.querySelector('.toggle-btn');
-    const searchInput = document.getElementById('searchInput');
-    
-    if (currentMode === 'search') {
-        // Switch to Q&A mode
-        currentMode = 'qa';
-        searchBtn.textContent = '🤖 Ask Question (RAG)';
-        searchBtn.onclick = performQA;
-        toggleBtn.textContent = '🔍 Switch to Search';
-        searchInput.placeholder = 'Ask a question (e.g., "What is machine learning?")';
-    } else {
-        // Switch to search mode
-        currentMode = 'search';
-        searchBtn.textContent = '🔍 Search Documents';
-        searchBtn.onclick = performSearch;
-        toggleBtn.textContent = '🤖 Switch to Q&A';
-        searchInput.placeholder = 'Enter your research query (e.g., "deep learning for medical image analysis")';
-    }
-}
-
-// Display API search results
-function displayAPIResults(data) {
-    const resultsDiv = document.getElementById('searchResults');
-    
-    if (!data.results || data.results.length === 0) {
-        resultsDiv.innerHTML = `
-            <div class="no-results">
-                <h3>🔍 No Results Found</h3>
-                <p>Try a different search query or check your spelling.</p>
-            </div>
-        `;
-        return;
-    }
-
-    let html = `
-        <div class="results-header">
-            <h3>🔍 Search Results</h3>
-            <p>Found ${data.total_found} relevant documents for "${data.query}"</p>
-        </div>
-        <div class="results-grid">
-    `;
-
-    data.results.forEach((result, index) => {
-        const similarityPercent = Math.round(result.score * 100);
-        const truncatedText = result.document.length > 150 ? result.document.substring(0, 150) + '...' : result.document;
         
-        // Generate a mock title from the document content
-        const title = generateDocumentTitle(result.document);
-        const authors = generateDocumentAuthors(result.document_id);
-        const venue = generateDocumentVenue(result.document_id);
-        const year = generateDocumentYear(result.document_id);
+        elements.pagination.style.display = 'flex';
+        elements.prevPage.disabled = currentPage === 1;
+        elements.nextPage.disabled = currentPage === totalPages;
         
-        html += `
-            <div class="result-card" onclick="expandResult(${index})">
-                <div class="result-header">
-                    <span class="result-number">#${index + 1}</span>
-                    <span class="similarity-score">${similarityPercent}% match</span>
-                    <span class="expand-icon">📖 Click to read full content</span>
-                </div>
-                <div class="result-content">
-                    <h4 class="document-title">${title}</h4>
-                    <div class="document-meta">
-                        <span class="authors">👤 ${authors}</span>
-                        <span class="venue">🏛️ ${venue}</span>
-                        <span class="year">📅 ${year}</span>
-                    </div>
-                    <p class="result-text" id="text-${index}">${truncatedText}</p>
-                    <div class="result-actions">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); viewFullDocument('${result.document_id}')">
-                            📄 View Full Document
-                        </button>
-                        <button class="action-btn cite-btn" onclick="event.stopPropagation(); citeDocument('${result.document_id}', '${title}', '${authors}', '${year}')">
-                            📋 Cite This Paper
-                        </button>
-                    </div>
-                    <div class="result-meta">
-                        <span class="document-id">Document ID: ${result.document_id}</span>
-                        <span class="distance">Distance: ${result.distance.toFixed(4)}</span>
-                    </div>
-                </div>
-                <div class="full-content" id="full-${index}" style="display: none;">
-                    <div class="full-text">
-                        <h4>📄 Full Document Content:</h4>
-                        <div class="document-info">
-                            <h5>${title}</h5>
-                            <p><strong>Authors:</strong> ${authors}</p>
-                            <p><strong>Venue:</strong> ${venue}</p>
-                            <p><strong>Year:</strong> ${year}</p>
-                        </div>
-                        <div class="document-content">
-                            <p>${result.document}</p>
-                        </div>
-                    </div>
-                    <div class="full-actions">
-                        <button class="action-btn view-btn" onclick="event.stopPropagation(); viewFullDocument('${result.document_id}')">
-                            📄 View Full Document
-                        </button>
-                        <button class="action-btn cite-btn" onclick="event.stopPropagation(); citeDocument('${result.document_id}', '${title}', '${authors}', '${year}')">
-                            📋 Cite This Paper
-                        </button>
-                        <button class="close-btn" onclick="event.stopPropagation(); collapseResult(${index})">✕ Close</button>
-                    </div>
-                </div>
-            </div>
-        `;
-    });
+        const startResult = (currentPage - 1) * CONFIG.RESULTS_PER_PAGE + 1;
+        const endResult = Math.min(currentPage * CONFIG.RESULTS_PER_PAGE, totalResults);
+        
+        elements.paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${startResult}-${endResult} of ${totalResults})`;
+    },
 
-    html += '</div>';
-    resultsDiv.innerHTML = html;
-}
+    async performSearch(query) {
+        if (isSearching) return;
+        
+        isSearching = true;
+        this.showLoading();
+        
+        try {
+            const results = await searchEngine.search(query);
+            this.renderResults(results, 1);
+            currentPage = 1;
+        } catch (error) {
+            console.error('Search error:', error);
+            this.showEmpty();
+        } finally {
+            isSearching = false;
+            this.hideLoading();
+        }
+    },
 
-// Display API Q&A results
-function displayQAResults(data) {
-    const resultsDiv = document.getElementById('searchResults');
-    
-    let html = `
-        <div class="qa-results">
-            <div class="qa-header">
-                <h3>🤖 RAG Answer</h3>
-                <p>Question: "${data.question}"</p>
-            </div>
-            <div class="qa-answer">
-                <p>${data.answer}</p>
-            </div>
-            <div class="qa-sources">
-                <h4>📚 Sources Used:</h4>
-                <div class="sources-grid">
-    `;
-
-    data.sources.forEach((source, index) => {
-        const similarityPercent = Math.round(source.score * 100);
-        html += `
-            <div class="source-card">
-                <div class="source-header">
-                    <span class="source-id">Source ${index + 1}</span>
-                    <span class="source-similarity">${similarityPercent}% relevant</span>
-                </div>
-                <div class="source-text">${source.document}</div>
-                <div class="source-meta">Document ID: ${source.document_id}</div>
-            </div>
-        `;
-    });
-
-    html += `
-                </div>
-            </div>
-            <div class="qa-context">
-                <h4>📖 Context Used:</h4>
-                <div class="context-text">${data.context_used}</div>
-            </div>
-        </div>
-    `;
-
-    resultsDiv.innerHTML = html;
-}
-
-// Display fallback search results
-function displayFallbackResults(query) {
-    const resultsDiv = document.getElementById('searchResults');
-    
-    let html = `
-        <div class="results-header">
-            <h3>🔍 Search Results (Demo Mode)</h3>
-            <p>Found ${fallbackPapers.length} relevant documents for "${query}"</p>
-            <div class="demo-notice">
-                <small>⚠️ Demo mode: Showing sample data. Backend API not available.</small>
-            </div>
-        </div>
-        <div class="results-grid">
-    `;
-
-    fallbackPapers.forEach((paper, index) => {
-        const similarityPercent = Math.round(paper.similarity * 100);
-        html += `
-            <div class="result-card">
-                <div class="result-header">
-                    <span class="result-number">#${index + 1}</span>
-                    <span class="similarity-score">${similarityPercent}% match</span>
-                </div>
-                <div class="result-content">
-                    <h4 class="result-title">${paper.title}</h4>
-                    <p class="result-text">${paper.abstract}</p>
-                    <div class="result-meta">
-                        <span class="authors">Authors: ${paper.authors}</span>
-                        <span class="year">Year: ${paper.year}</span>
-                        <span class="venue">Venue: ${paper.venue}</span>
-                    </div>
-                    <div class="keywords">
-                        ${paper.keywords.map(keyword => `<span class="keyword">${keyword}</span>`).join('')}
-                    </div>
-                </div>
-            </div>
-        `;
-    });
-
-    html += '</div>';
-    resultsDiv.innerHTML = html;
-}
-
-// Display fallback Q&A results
-function displayFallbackQA(query) {
-    const resultsDiv = document.getElementById('searchResults');
-    
-    const demoAnswers = {
-        'what is machine learning': 'Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data without being explicitly programmed.',
-        'what is deep learning': 'Deep learning uses multiple layers of neural networks to model complex patterns in data, inspired by the structure of the human brain.',
-        'what is python': 'Python is a versatile programming language widely used in data science, web development, and automation due to its simplicity and powerful libraries.'
-    };
-
-    const answer = demoAnswers[query.toLowerCase()] || 'This is a demo answer. In a real system, this would be generated using RAG (Retrieval-Augmented Generation) with your indexed documents.';
-
-    resultsDiv.innerHTML = `
-        <div class="qa-results">
-            <div class="qa-header">
-                <h3>🤖 RAG Answer (Demo Mode)</h3>
-                <p>Question: "${query}"</p>
-                <div class="demo-notice">
-                    <small>⚠️ Demo mode: Showing sample answer. Backend API not available.</small>
-                </div>
-            </div>
-            <div class="qa-answer">
-                <p>${answer}</p>
-            </div>
-            <div class="qa-sources">
-                <h4>📚 Sample Sources:</h4>
-                <div class="sources-grid">
-                    <div class="source-card">
-                        <div class="source-header">
-                            <span class="source-id">Source 1</span>
-                            <span class="source-similarity">95% relevant</span>
-                        </div>
-                        <div class="source-text">${fallbackPapers[0].abstract}</div>
-                        <div class="source-meta">Document ID: doc_0</div>
-                    </div>
-                    <div class="source-card">
-                        <div class="source-header">
-                            <span class="source-id">Source 2</span>
-                            <span class="source-similarity">88% relevant</span>
-                        </div>
-                        <div class="source-text">${fallbackPapers[1].abstract}</div>
-                        <div class="source-meta">Document ID: doc_1</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    `;
-}
-
-// Helper functions to generate document metadata
-function generateDocumentTitle(document) {
-    // Extract first sentence or first 60 characters as title
-    const firstSentence = document.split('.')[0];
-    if (firstSentence.length > 60) {
-        return firstSentence.substring(0, 60) + '...';
+    applyFiltersAndSearch() {
+        const query = elements.searchInput.value.trim();
+        const filteredResults = searchEngine.applyFilters();
+        
+        if (query) {
+            // Apply search to filtered results
+            const searchResults = filteredResults.map(paper => {
+                const similarity = utils.calculateTokenSimilarity(paper, query);
+                return { ...paper, similarity };
+            }).filter(paper => paper.similarity > 0)
+              .sort((a, b) => b.similarity - a.similarity);
+            
+            this.renderResults(searchResults, 1);
+        } else {
+            // Just show filtered results
+            this.renderResults(filteredResults, 1);
+        }
+        
+        currentPage = 1;
     }
-    return firstSentence || 'Research Document';
-}
+};
 
-function generateDocumentAuthors(documentId) {
-    const authorMap = {
-        'doc_0': 'Dr. Sarah Johnson',
-        'doc_1': 'Prof. Michael Chen',
-        'doc_2': 'Dr. Emily Rodriguez',
-        'doc_3': 'Prof. David Kim',
-        'doc_4': 'Dr. Lisa Wang',
-        'doc_5': 'Prof. James Brown',
-        'doc_6': 'Dr. Maria Garcia',
-        'doc_7': 'Prof. Robert Taylor',
-        'doc_8': 'Dr. Jennifer Lee',
-        'doc_9': 'Prof. Christopher Davis'
-    };
-    return authorMap[documentId] || 'Research Team';
-}
+// Dark mode module
+const darkMode = {
+    init() {
+        const savedTheme = localStorage.getItem('theme');
+        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
+        
+        if (savedTheme) {
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        } else if (prefersDark) {
+            document.documentElement.setAttribute('data-theme', 'dark');
+        }
+        
+        this.updateToggleIcon();
+    },
 
-function generateDocumentVenue(documentId) {
-    const venueMap = {
-        'doc_0': 'Journal of Machine Learning',
-        'doc_1': 'Nature AI Research',
-        'doc_2': 'IEEE Transactions on AI',
-        'doc_3': 'ACM Computing Surveys',
-        'doc_4': 'Science Robotics',
-        'doc_5': 'Neural Information Processing',
-        'doc_6': 'International AI Conference',
-        'doc_7': 'Machine Learning Review',
-        'doc_8': 'AI & Society Journal',
-        'doc_9': 'Computational Intelligence'
-    };
-    return venueMap[documentId] || 'Research Publication';
-}
+    toggle() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
+        
+        document.documentElement.setAttribute('data-theme', newTheme);
+        localStorage.setItem('theme', newTheme);
+        this.updateToggleIcon();
+    },
 
-function generateDocumentYear(documentId) {
-    const yearMap = {
-        'doc_0': '2024',
-        'doc_1': '2023',
-        'doc_2': '2024',
-        'doc_3': '2023',
-        'doc_4': '2024',
-        'doc_5': '2023',
-        'doc_6': '2024',
-        'doc_7': '2023',
-        'doc_8': '2024',
-        'doc_9': '2023'
-    };
-    return yearMap[documentId] || '2024';
-}
-
-// Action functions for document interaction
-function viewFullDocument(documentId) {
-    // In a real system, this would open the full document
-    // For now, we'll show an alert with instructions
-    alert(`📄 View Full Document\n\nDocument ID: ${documentId}\n\nIn a production system, this would:\n• Open the full research paper\n• Navigate to the publisher's website\n• Show PDF or HTML version\n• Allow downloading\n\nFor now, expand the result above to read the full content.`);
-}
-
-function citeDocument(documentId, title, authors, year) {
-    const citation = `${authors} (${year}). "${title}". Retrieved from RAG Vector Search System.`;
-    
-    // Copy to clipboard
-    navigator.clipboard.writeText(citation).then(() => {
-        alert(`📋 Citation Copied to Clipboard!\n\n${citation}\n\nYou can now paste this citation in your research document.`);
-    }).catch(() => {
-        // Fallback if clipboard API fails
-        const textArea = document.createElement('textarea');
-        textArea.value = citation;
-        document.body.appendChild(textArea);
-        textArea.select();
-        document.execCommand('copy');
-        document.body.removeChild(textArea);
-        alert(`📋 Citation Ready to Copy!\n\n${citation}\n\nCitation has been selected. Press Ctrl+C to copy.`);
-    });
-}
-
-// Expand result function
-function expandResult(index) {
-    const fullContent = document.getElementById(`full-${index}`);
-    const textElement = document.getElementById(`text-${index}`);
-    
-    if (fullContent.style.display === 'none') {
-        fullContent.style.display = 'block';
-        textElement.style.display = 'none';
+    updateToggleIcon() {
+        const currentTheme = document.documentElement.getAttribute('data-theme');
+        const icon = elements.darkModeToggle.querySelector('.toggle-icon');
+        icon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
     }
-}
+};
 
-// Collapse result function
-function collapseResult(index) {
-    const fullContent = document.getElementById(`full-${index}`);
-    const textElement = document.getElementById(`text-${index}`);
-    
-    fullContent.style.display = 'none';
-    textElement.style.display = 'block';
-}
+// Event handlers
+const eventHandlers = {
+    init() {
+        // Search input events
+        elements.searchInput.addEventListener('input', utils.debounce((e) => {
+            const query = e.target.value.trim();
+            if (query) {
+                ui.performSearch(query);
+            } else {
+                ui.applyFiltersAndSearch();
+            }
+        }, CONFIG.DEBOUNCE_DELAY));
 
-// Initialize the page
-document.addEventListener('DOMContentLoaded', function() {
-    console.log('RAG System Frontend Loaded');
-    console.log('API URL:', API_URL);
-    console.log('Render Backend:', API_CONFIG.BASE_URL);
-    console.log('Current Mode:', currentMode);
-    
-    // Set initial mode
-    const searchBtn = document.querySelector('.search-btn');
-    if (searchBtn) {
-        searchBtn.onclick = performSearch;
-    }
-    
-    // Add Enter key support for search input
-    const searchInput = document.getElementById('searchInput');
-    if (searchInput) {
-        searchInput.addEventListener('keypress', function(e) {
+        elements.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
-                if (currentMode === 'search') {
-                    performSearch();
-                } else {
-                    performQA();
+                e.preventDefault();
+                const query = e.target.value.trim();
+                if (query) {
+                    ui.performSearch(query);
+                }
+            }
+        });
+
+        // Search button
+        elements.searchButton.addEventListener('click', () => {
+            const query = elements.searchInput.value.trim();
+            if (query) {
+                ui.performSearch(query);
+            }
+        });
+
+        // Example queries
+        document.querySelectorAll('.example-query').forEach(button => {
+            button.addEventListener('click', (e) => {
+                const query = e.target.dataset.query;
+                elements.searchInput.value = query;
+                ui.performSearch(query);
+            });
+        });
+
+        // Filter events
+        elements.yearRange.addEventListener('change', () => ui.applyFiltersAndSearch());
+        elements.venueFilter.addEventListener('change', () => ui.applyFiltersAndSearch());
+        elements.authorFilter.addEventListener('input', utils.debounce(() => ui.applyFiltersAndSearch(), CONFIG.DEBOUNCE_DELAY));
+
+        // Pagination events
+        elements.prevPage.addEventListener('click', () => {
+            if (currentPage > 1) {
+                currentPage--;
+                ui.renderResults(filteredPapers, currentPage);
+            }
+        });
+
+        elements.nextPage.addEventListener('click', () => {
+            if (currentPage < totalPages) {
+                currentPage++;
+                ui.renderResults(filteredPapers, currentPage);
+            }
+        });
+
+        // Dark mode toggle
+        elements.darkModeToggle.addEventListener('click', () => darkMode.toggle());
+
+        // Result card clicks
+        elements.resultsContainer.addEventListener('click', (e) => {
+            const card = e.target.closest('.result-card');
+            if (card) {
+                const paperId = card.dataset.paperId;
+                const paper = papersData.find(p => p.id === paperId);
+                if (paper && paper.url) {
+                    window.open(paper.url, '_blank');
                 }
             }
         });
     }
-});
+};
+
+// Initialize application
+async function init() {
+    try {
+        // Load data
+        await dataLoader.loadPapers();
+        
+        // Initialize dark mode
+        darkMode.init();
+        
+        // Initialize event handlers
+        eventHandlers.init();
+        
+        // Show initial results
+        ui.renderResults(papersData, 1);
+        
+        console.log('Vector Similarity Search Engine initialized successfully');
+    } catch (error) {
+        console.error('Initialization error:', error);
+    }
+}
+
+// Start the application when DOM is loaded
+document.addEventListener('DOMContentLoaded', init);
+
+// Export for potential external use
+window.VectorSearchEngine = {
+    searchEngine,
+    ui,
+    utils,
+    CONFIG
+};
