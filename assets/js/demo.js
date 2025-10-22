@@ -48,10 +48,43 @@ const fallbackPapers = [
     }
 ];
 
-// Search query function for demo buttons
-function searchQuery(query) {
+// Execute demo search function - fills search box and performs search immediately
+async function executeDemoSearch(query) {
+    // Fill the search input
     document.getElementById('searchInput').value = query;
-    performSearch();
+    
+    // Add visual feedback to the clicked demo query
+    const clickedElement = event.target.closest('.demo-query');
+    if (clickedElement) {
+        clickedElement.style.transform = 'scale(0.95)';
+        clickedElement.style.backgroundColor = '#667eea';
+        clickedElement.style.color = 'white';
+        
+        // Reset after animation
+        setTimeout(() => {
+            clickedElement.style.transform = '';
+            clickedElement.style.backgroundColor = '';
+            clickedElement.style.color = '';
+        }, 200);
+    }
+    
+    // Scroll to search results section
+    document.getElementById('searchResults').scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+    });
+    
+    // Execute the search based on current mode
+    if (currentMode === 'search') {
+        await performSearch();
+    } else {
+        await performQA();
+    }
+}
+
+// Search query function for demo buttons (legacy - now calls executeDemoSearch)
+function searchQuery(query) {
+    executeDemoSearch(query);
 }
 
 // Main search function

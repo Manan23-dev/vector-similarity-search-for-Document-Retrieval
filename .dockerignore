@@ -1,0 +1,72 @@
+# Git
+.git
+.gitignore
+
+# Documentation
+README.md
+DEPLOYMENT.md
+RENDER_DEPLOYMENT.md
+docs/
+
+# Development files
+tests/
+.pytest_cache/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+env/
+venv/
+.venv/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+logs/
+
+# Frontend files (not needed for backend container)
+frontend/
+assets/
+index.html
+test.html
+
+# Deployment files
+.vercel/
+vercel.json
+Procfile
+build.sh
+runtime.txt
+
+# AWS and Kubernetes (not needed for Docker)
+aws/
+kubernetes/
+
+# Temporary files
+tmp/
+temp/
+*.tmp
+
+# Coverage reports
+htmlcov/
+.coverage
+coverage.xml
+
+# Node modules (if any)
+node_modules/
+npm-debug.log*
+
+# Build artifacts
+dist/
+build/
+*.egg-info/
