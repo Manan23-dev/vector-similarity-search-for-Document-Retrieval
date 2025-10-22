@@ -5,9 +5,9 @@ A high-performance RAG-based system with LangChain and Hugging Face, enabling au
 ## 🚀 Live Demo
 
 **Click here to access the working demo with search functionality:**
-**[https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/docs/)**
+[https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)*
 
-*Note: If the above link doesn't work, try: [https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/](https://manan23-dev.github.io/vector-similarity-search-for-Document-Retrieval/)*
+
 
 ## Features
 
