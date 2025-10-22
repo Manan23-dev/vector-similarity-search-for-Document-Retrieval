@@ -155,7 +155,7 @@ npx serve .
 
 ### **Data Sources**
 ```python
-# data_loader.py
+# data_loader.py - UPDATED: Now includes IEEE Xplore and Springer APIs
 DATA_CONFIG = {
     "huggingface": {
         "enabled": True,
@@ -165,6 +165,18 @@ DATA_CONFIG = {
         "enabled": True,
         "query": "cat:cs.AI OR cat:cs.CV OR cat:cs.LG",
         "max_results": 2000
+    },
+    "ieee_xplore": {
+        "enabled": False,  # Set to True with API key
+        "api_key": "",  # Your IEEE Xplore API key
+        "query": "machine learning artificial intelligence",
+        "max_results": 1000
+    },
+    "springer": {
+        "enabled": False,  # Set to True with API key
+        "api_key": "",  # Your Springer API key
+        "query": "machine learning artificial intelligence",
+        "max_results": 1000
     },
     "synthetic": {
         "enabled": True,

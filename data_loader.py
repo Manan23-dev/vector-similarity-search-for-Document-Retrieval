@@ -21,6 +21,8 @@ class ResearchPaperDataLoader:
     - Hugging Face datasets
     - Kaggle datasets  
     - arXiv API
+    - IEEE Xplore API
+    - Springer API
     - Local JSON files
     """
     
@@ -135,6 +137,121 @@ class ResearchPaperDataLoader:
             
         except Exception as e:
             logger.error(f"Error loading from arXiv: {e}")
+            return []
+    
+    def load_from_ieee_xplore(self, api_key: str, query: str = "machine learning", 
+                            max_results: int = 1000) -> List[Dict]:
+        """
+        Load papers from IEEE Xplore API
+        Requires IEEE Xplore API key
+        """
+        try:
+            logger.info(f"Loading papers from IEEE Xplore API with query: {query}")
+            
+            # IEEE Xplore API endpoint
+            base_url = "http://ieeexploreapi.ieee.org/api/v1/search/articles"
+            
+            papers = []
+            start_record = 1
+            
+            while len(papers) < max_results:
+                params = {
+                    'apikey': api_key,
+                    'querytext': query,
+                    'format': 'json',
+                    'max_records': min(200, max_results - len(papers)),
+                    'start_record': start_record
+                }
+                
+                response = requests.get(base_url, params=params, timeout=30)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                if 'articles' not in data:
+                    break
+                
+                for article in data['articles']:
+                    paper = {
+                        "id": f"ieee_{article.get('article_number', len(papers))}",
+                        "title": article.get('title', ''),
+                        "abstract": article.get('abstract', ''),
+                        "authors": [author.get('full_name', '') for author in article.get('authors', {}).get('authors', [])],
+                        "year": int(article.get('publication_year', 2024)),
+                        "venue": article.get('publication_title', 'IEEE'),
+                        "keywords": article.get('index_terms', {}).get('ieee_terms', {}).get('terms', []),
+                        "url": article.get('pdf_url', article.get('html_url', '')),
+                        "source": "ieee_xplore"
+                    }
+                    papers.append(paper)
+                
+                start_record += len(data['articles'])
+                
+                if len(data['articles']) < 200:  # No more results
+                    break
+                    
+            logger.info(f"Loaded {len(papers)} papers from IEEE Xplore")
+            return papers
+            
+        except Exception as e:
+            logger.error(f"Error loading from IEEE Xplore: {e}")
+            return []
+    
+    def load_from_springer(self, api_key: str, query: str = "machine learning", 
+                         max_results: int = 1000) -> List[Dict]:
+        """
+        Load papers from Springer API
+        Requires Springer API key
+        """
+        try:
+            logger.info(f"Loading papers from Springer API with query: {query}")
+            
+            # Springer API endpoint
+            base_url = "http://api.springernature.com/metadata/json"
+            
+            papers = []
+            start_record = 1
+            
+            while len(papers) < max_results:
+                params = {
+                    'api_key': api_key,
+                    'q': query,
+                    'p': min(50, max_results - len(papers)),  # Springer uses 'p' for count
+                    's': start_record  # Springer uses 's' for start
+                }
+                
+                response = requests.get(base_url, params=params, timeout=30)
+                response.raise_for_status()
+                
+                data = response.json()
+                
+                if 'records' not in data:
+                    break
+                
+                for record in data['records']:
+                    paper = {
+                        "id": f"springer_{record.get('identifier', len(papers))}",
+                        "title": record.get('title', ''),
+                        "abstract": record.get('abstract', ''),
+                        "authors": [creator.get('creator', '') for creator in record.get('creators', [])],
+                        "year": int(record.get('publicationDate', '2024')[:4]) if record.get('publicationDate') else 2024,
+                        "venue": record.get('publicationName', 'Springer'),
+                        "keywords": record.get('subjects', []),
+                        "url": record.get('url', [{}])[0].get('value', '') if record.get('url') else '',
+                        "source": "springer"
+                    }
+                    papers.append(paper)
+                
+                start_record += len(data['records'])
+                
+                if len(data['records']) < 50:  # No more results
+                    break
+                    
+            logger.info(f"Loaded {len(papers)} papers from Springer")
+            return papers
+            
+        except Exception as e:
+            logger.error(f"Error loading from Springer: {e}")
             return []
     
     def load_from_local_json(self, file_path: str) -> List[Dict]:
@@ -271,6 +388,24 @@ class ResearchPaperDataLoader:
             )
             all_papers.extend(arxiv_papers)
         
+        # Load from IEEE Xplore
+        if config.get("ieee_xplore", {}).get("enabled", False):
+            ieee_papers = self.load_from_ieee_xplore(
+                config["ieee_xplore"].get("api_key", ""),
+                config["ieee_xplore"].get("query", "machine learning"),
+                config["ieee_xplore"].get("max_results", 1000)
+            )
+            all_papers.extend(ieee_papers)
+        
+        # Load from Springer
+        if config.get("springer", {}).get("enabled", False):
+            springer_papers = self.load_from_springer(
+                config["springer"].get("api_key", ""),
+                config["springer"].get("query", "machine learning"),
+                config["springer"].get("max_results", 1000)
+            )
+            all_papers.extend(springer_papers)
+        
         # Load from local JSON
         if config.get("local", {}).get("enabled", False):
             local_papers = self.load_from_local_json(
@@ -341,6 +476,18 @@ DATA_CONFIG = {
         "enabled": True,
         "query": "cat:cs.AI OR cat:cs.CV OR cat:cs.LG OR cat:cs.CL OR cat:cs.RO",
         "max_results": 2000
+    },
+    "ieee_xplore": {
+        "enabled": False,  # Set to True and add API key
+        "api_key": "",  # Add your IEEE Xplore API key here
+        "query": "machine learning artificial intelligence",
+        "max_results": 1000
+    },
+    "springer": {
+        "enabled": False,  # Set to True and add API key
+        "api_key": "",  # Add your Springer API key here
+        "query": "machine learning artificial intelligence",
+        "max_results": 1000
     },
     "local": {
         "enabled": True,
