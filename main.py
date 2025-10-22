@@ -7,6 +7,7 @@ import json
 import os
 import logging
 from src.api.endpoints import router
+from data_loader import ResearchPaperDataLoader, DATA_CONFIG
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
