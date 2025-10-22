@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Research Paper Discovery - Vector Search Engine Demo</title>
+    <meta name="description" content="Live demo of vector similarity search engine for research paper discovery using HNSWlib, FastAPI & PyTorch">
+    <meta name="keywords" content="vector search, machine learning, research papers, AI, similarity search">
+    <link rel="stylesheet" href="assets/css/demo.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔍 AI Research Paper Discovery</h1>
+            <p>Vector Similarity Search Engine powered by HNSWlib, FastAPI & PyTorch</p>
+            <div class="github-links">
+                <a href="https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval" target="_blank" class="github-btn">
+                    📂 View Source Code
+                </a>
+                <a href="https://www.linkedin.com/in/mananpatel23/" target="_blank" class="linkedin-btn">
+                    🔗 Connect to LinkedIn
+                </a>
+            </div>
+        </div>
+
+        <div class="search-section">
+            <div class="search-container">
+                <div class="search-input-container">
+                    <input type="text" id="searchInput" placeholder="Search research papers... (e.g., 'machine learning', 'neural networks')" />
+                    <div class="search-buttons">
+                        <button onclick="performSearch()" class="search-btn">🔍 Search</button>
+                        <button class="toggle-btn" onclick="toggleMode()">🤖 Switch to Q&A</button>
+                    </div>
+                </div>
+                
+                <div class="demo-queries">
+                    <h3>Try these queries:</h3>
+                    <div class="query-tabs">
+                        <span class="demo-query" onclick="executeDemoSearch('machine learning')">Machine Learning</span>
+                        <span class="demo-query" onclick="executeDemoSearch('neural networks')">Neural Networks</span>
+                        <span class="demo-query" onclick="executeDemoSearch('deep learning')">Deep Learning</span>
+                        <span class="demo-query" onclick="executeDemoSearch('natural language processing')">NLP</span>
+                        <span class="demo-query" onclick="executeDemoSearch('computer vision')">Computer Vision</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="results-section" id="resultsSection">
+            <div class="results-container" id="resultsContainer">
+                <!-- Results will be populated here -->
+            </div>
+        </div>
+
+        <div class="qa-section" id="qaSection" style="display: none;">
+            <div class="qa-container" id="qaContainer">
+                <!-- Q&A results will be populated here -->
+            </div>
+        </div>
+
+        <div class="footer">
+            <p>Built with ❤️ using FastAPI, HNSWlib, and PyTorch</p>
+            <p>Backend: <a href="https://vector-similarity-search-for-document.onrender.com" target="_blank">Render</a> | Frontend: GitHub Pages</p>
+        </div>
+    </div>
+
+    <script src="assets/js/demo.js"></script>
+</body>
+</html>
