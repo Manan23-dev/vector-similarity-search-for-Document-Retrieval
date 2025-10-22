@@ -1,4 +1,4 @@
-// Configuration for API endpoints
+// Configuration for API endpoints - Updated to use Render only
 const API_CONFIG = {
     // Your deployed Render backend URL
     BASE_URL: 'https://vector-similarity-search-for-document.onrender.com',
@@ -396,6 +396,7 @@ function collapseResult(index) {
 document.addEventListener('DOMContentLoaded', function() {
     console.log('RAG System Frontend Loaded');
     console.log('API URL:', API_URL);
+    console.log('Render Backend:', API_CONFIG.BASE_URL);
     console.log('Current Mode:', currentMode);
     
     // Set initial mode
