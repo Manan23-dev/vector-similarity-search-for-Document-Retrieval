@@ -1,127 +1,13 @@
 <!DOCTYPE html>
-<html lang="en">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>RAG System Test</title>
-    <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .test-section { margin: 20px 0; padding: 20px; border: 1px solid #ccc; }
-        button { padding: 10px 20px; margin: 10px; background: #007bff; color: white; border: none; cursor: pointer; }
-        .result { margin: 10px 0; padding: 10px; background: #f8f9fa; border-left: 4px solid #007bff; }
-        .error { border-left-color: #dc3545; background: #f8d7da; }
-        .success { border-left-color: #28a745; background: #d4edda; }
-    </style>
+    <title>Test Page</title>
 </head>
 <body>
-    <h1>🔍 RAG System Connection Test</h1>
-    
-    <div class="test-section">
-        <h2>Backend Status</h2>
-        <button onclick="testHealth()">Test Health Check</button>
-        <div id="healthResult" class="result"></div>
-    </div>
-    
-    <div class="test-section">
-        <h2>Search API Test</h2>
-        <button onclick="testSearch()">Test Search API</button>
-        <div id="searchResult" class="result"></div>
-    </div>
-    
-    <div class="test-section">
-        <h2>Q&A API Test</h2>
-        <button onclick="testQA()">Test Q&A API</button>
-        <div id="qaResult" class="result"></div>
-    </div>
-
+    <h1>This is a test page</h1>
+    <p>If you can see this, GitHub Pages is working correctly.</p>
     <script>
-        const API_URL = 'https://vector-similarity-search-for-document.onrender.com';
-        
-        async function testHealth() {
-            const resultDiv = document.getElementById('healthResult');
-            resultDiv.innerHTML = 'Testing...';
-            
-            try {
-                const response = await fetch(`${API_URL}/health`, {
-                    method: 'GET',
-                    headers: {
-                        'Accept': 'application/json',
-                    },
-                    mode: 'cors',
-                    credentials: 'omit'
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    resultDiv.innerHTML = `<div class="success">✅ Health Check Passed<br>Status: ${data.status}<br>System: ${data.system}</div>`;
-                } else {
-                    resultDiv.innerHTML = `<div class="error">❌ Health Check Failed<br>Status: ${response.status}</div>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">❌ Connection Error<br>${error.message}</div>`;
-            }
-        }
-        
-        async function testSearch() {
-            const resultDiv = document.getElementById('searchResult');
-            resultDiv.innerHTML = 'Testing...';
-            
-            try {
-                const response = await fetch(`${API_URL}/api/search`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    mode: 'cors',
-                    credentials: 'omit',
-                    body: JSON.stringify({
-                        query: 'machine learning',
-                        top_k: 3,
-                        threshold: 0.0
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    resultDiv.innerHTML = `<div class="success">✅ Search API Working<br>Found ${data.total_found} results<br>Query: "${data.query}"</div>`;
-                } else {
-                    resultDiv.innerHTML = `<div class="error">❌ Search API Failed<br>Status: ${response.status}</div>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">❌ Search Error<br>${error.message}</div>`;
-            }
-        }
-        
-        async function testQA() {
-            const resultDiv = document.getElementById('qaResult');
-            resultDiv.innerHTML = 'Testing...';
-            
-            try {
-                const response = await fetch(`${API_URL}/api/qa`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                    },
-                    mode: 'cors',
-                    credentials: 'omit',
-                    body: JSON.stringify({
-                        query: 'What is machine learning?',
-                        top_k: 3
-                    })
-                });
-                
-                if (response.ok) {
-                    const data = await response.json();
-                    resultDiv.innerHTML = `<div class="success">✅ Q&A API Working<br>Answer: "${data.answer.substring(0, 100)}..."<br>Sources: ${data.sources.length}</div>`;
-                } else {
-                    resultDiv.innerHTML = `<div class="error">❌ Q&A API Failed<br>Status: ${response.status}</div>`;
-                }
-            } catch (error) {
-                resultDiv.innerHTML = `<div class="error">❌ Q&A Error<br>${error.message}</div>`;
-            }
-        }
+        console.log("JavaScript is working!");
     </script>
 </body>
 </html>
