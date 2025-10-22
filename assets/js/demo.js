@@ -100,32 +100,45 @@ const utils = {
         return dotProduct / (Math.sqrt(normA) * Math.sqrt(normB));
     },
 
-    // Calculate weighted token overlap similarity
+    // Calculate token-based similarity (fallback when no vectors)
     calculateTokenSimilarity(paper, query) {
         const queryTokens = utils.tokenize(query);
         const titleTokens = utils.tokenize(paper.title);
         const abstractTokens = utils.tokenize(paper.abstract);
-        const keywordTokens = paper.keywords.flatMap(k => utils.tokenize(k));
+        const keywordTokens = utils.tokenize(paper.keywords.join(' '));
         
         let score = 0;
-        let totalWeight = 0;
         
         // Title weight: 1.5x
-        const titleMatches = queryTokens.filter(qt => titleTokens.includes(qt)).length;
-        score += titleMatches * 1.5;
-        totalWeight += titleTokens.length * 1.5;
+        queryTokens.forEach(queryToken => {
+            titleTokens.forEach(titleToken => {
+                if (titleToken.includes(queryToken) || queryToken.includes(titleToken)) {
+                    score += 1.5;
+                }
+            });
+        });
         
         // Keywords weight: 1.3x
-        const keywordMatches = queryTokens.filter(qt => keywordTokens.includes(qt)).length;
-        score += keywordMatches * 1.3;
-        totalWeight += keywordTokens.length * 1.3;
+        queryTokens.forEach(queryToken => {
+            keywordTokens.forEach(keywordToken => {
+                if (keywordToken.includes(queryToken) || queryToken.includes(keywordToken)) {
+                    score += 1.3;
+                }
+            });
+        });
         
-        // Abstract weight: 1x
-        const abstractMatches = queryTokens.filter(qt => abstractTokens.includes(qt)).length;
-        score += abstractMatches * 1;
-        totalWeight += abstractTokens.length * 1;
+        // Abstract weight: 1.0x
+        queryTokens.forEach(queryToken => {
+            abstractTokens.forEach(abstractToken => {
+                if (abstractToken.includes(queryToken) || queryToken.includes(abstractToken)) {
+                    score += 1.0;
+                }
+            });
+        });
         
-        return totalWeight > 0 ? Math.min(score / totalWeight, 1) : 0;
+        // Normalize to 0-1 range
+        const maxPossibleScore = queryTokens.length * (1.5 + 1.3 + 1.0);
+        return Math.min(score / maxPossibleScore, 1);
     },
 
     // Simulate API latency
@@ -139,15 +152,53 @@ const utils = {
 const dataLoader = {
     async loadPapers() {
         try {
+            // Try to load from API first
+            const apiSuccess = await this.loadFromAPI();
+            if (apiSuccess) {
+                console.log(`✅ Loaded ${papersData.length} papers from API`);
+                return;
+            }
+            
+            // Fallback to local data
             const response = await fetch('assets/data/sample-papers.json');
             const data = await response.json();
             papersData = data.papers;
             filteredPapers = [...papersData];
-            console.log(`Loaded ${papersData.length} papers`);
+            console.log(`📁 Loaded ${papersData.length} papers from local data (fallback)`);
         } catch (error) {
-            console.error('Error loading papers:', error);
+            console.error('❌ Error loading papers:', error);
             papersData = [];
             filteredPapers = [];
+        }
+    },
+
+    async loadFromAPI() {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/api/stats`, {
+                method: 'GET',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                }
+            });
+            
+            if (!response.ok) {
+                throw new Error(`API responded with status: ${response.status}`);
+            }
+            
+            const stats = await response.json();
+            console.log('📊 API Stats:', stats);
+            
+            // For now, we'll use local data but show API is connected
+            const localResponse = await fetch('assets/data/sample-papers.json');
+            const localData = await localResponse.json();
+            papersData = localData.papers;
+            filteredPapers = [...papersData];
+            
+            return true;
+        } catch (error) {
+            console.warn('⚠️ API not available, using local data:', error.message);
+            return false;
         }
     }
 };
@@ -162,22 +213,21 @@ const searchEngine = {
 
         searchStartTime = performance.now();
         
-        // Simulate API latency
-        await utils.simulateLatency();
-        
-        // Calculate similarity scores
-        const results = papersData.map(paper => {
-            const similarity = utils.calculateTokenSimilarity(paper, query);
-            return {
-                ...paper,
-                similarity: similarity
-            };
-        });
-
-        // Sort by similarity (descending)
-        filteredPapers = results
-            .filter(paper => paper.similarity > 0)
-            .sort((a, b) => b.similarity - a.similarity);
+        try {
+            // Try API search first
+            const apiResults = await this.searchAPI(query);
+            if (apiResults && apiResults.length > 0) {
+                filteredPapers = apiResults;
+                console.log(`🔍 API search returned ${apiResults.length} results`);
+            } else {
+                // Fallback to local search
+                filteredPapers = await this.searchLocal(query);
+                console.log(`🔍 Local search returned ${filteredPapers.length} results`);
+            }
+        } catch (error) {
+            console.warn('⚠️ API search failed, using local search:', error.message);
+            filteredPapers = await this.searchLocal(query);
+        }
 
         // Update query speed metric
         const queryTime = Math.round(performance.now() - searchStartTime);
@@ -191,35 +241,66 @@ const searchEngine = {
         return filteredPapers;
     },
 
-    applyFilters() {
-        let filtered = [...papersData];
-        
-        // Year range filter
-        const yearRange = elements.yearRange.value;
-        if (yearRange) {
-            const [startYear, endYear] = yearRange.split('-').map(y => parseInt(y));
-            if (yearRange === 'before-2010') {
-                filtered = filtered.filter(paper => paper.year < 2010);
-            } else if (endYear) {
-                filtered = filtered.filter(paper => paper.year >= startYear && paper.year <= endYear);
+    async searchAPI(query) {
+        try {
+            const response = await fetch(`${CONFIG.API_BASE_URL}/api/search`, {
+                method: 'POST',
+                headers: {
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    query: query,
+                    top_k: 50,
+                    threshold: 0.1
+                })
+            });
+
+            if (!response.ok) {
+                throw new Error(`API responded with status: ${response.status}`);
             }
+
+            const data = await response.json();
+            return data.results || [];
+        } catch (error) {
+            throw error;
         }
+    },
+
+    async searchLocal(query) {
+        // Simulate API latency
+        await utils.simulateLatency();
         
-        // Venue filter
-        const venue = elements.venueFilter.value;
-        if (venue) {
-            filtered = filtered.filter(paper => paper.venue === venue);
-        }
-        
-        // Author filter
-        const author = elements.authorFilter.value.toLowerCase();
-        if (author) {
-            filtered = filtered.filter(paper => 
-                paper.authors.some(a => a.toLowerCase().includes(author))
+        // Calculate similarity scores
+        const results = papersData.map(paper => {
+            const similarity = utils.calculateTokenSimilarity(paper, query);
+            return {
+                ...paper,
+                similarity: similarity
+            };
+        });
+
+        // Sort by similarity (descending)
+        return results
+            .filter(paper => paper.similarity > 0)
+            .sort((a, b) => b.similarity - a.similarity);
+    },
+
+    applyFilters() {
+        const yearFilter = elements.yearRange.value;
+        const venueFilter = elements.venueFilter.value.toLowerCase();
+        const authorFilter = elements.authorFilter.value.toLowerCase();
+
+        filteredPapers = papersData.filter(paper => {
+            const yearMatch = !yearFilter || paper.year >= parseInt(yearFilter);
+            const venueMatch = !venueFilter || paper.venue.toLowerCase().includes(venueFilter);
+            const authorMatch = !authorFilter || paper.authors.some(author => 
+                author.toLowerCase().includes(authorFilter)
             );
-        }
-        
-        filteredPapers = filtered;
+            
+            return yearMatch && venueMatch && authorMatch;
+        });
+
         return filteredPapers;
     }
 };
@@ -230,120 +311,133 @@ const ui = {
         elements.loadingState.style.display = 'block';
         elements.resultsContainer.style.display = 'none';
         elements.emptyState.style.display = 'none';
-        elements.pagination.style.display = 'none';
     },
 
     hideLoading() {
         elements.loadingState.style.display = 'none';
-        elements.resultsContainer.style.display = 'block';
     },
 
     showEmpty() {
-        elements.emptyState.style.display = 'block';
+        elements.loadingState.style.display = 'none';
         elements.resultsContainer.style.display = 'none';
-        elements.pagination.style.display = 'none';
+        elements.emptyState.style.display = 'block';
     },
 
-    hideEmpty() {
+    showResults() {
+        elements.loadingState.style.display = 'none';
+        elements.resultsContainer.style.display = 'block';
         elements.emptyState.style.display = 'none';
     },
 
     renderResults(results, page = 1) {
+        if (!results || results.length === 0) {
+            this.showEmpty();
+            return;
+        }
+
+        this.showResults();
+        
         const startIndex = (page - 1) * CONFIG.RESULTS_PER_PAGE;
         const endIndex = startIndex + CONFIG.RESULTS_PER_PAGE;
         const pageResults = results.slice(startIndex, endIndex);
         
-        if (pageResults.length === 0) {
-            this.showEmpty();
-        return;
-    }
+        totalPages = Math.ceil(results.length / CONFIG.RESULTS_PER_PAGE);
+        currentPage = page;
 
-        this.hideEmpty();
-        
-        const query = elements.searchInput.value.trim();
-        const html = pageResults.map(paper => this.createResultCard(paper, query)).join('');
-        elements.resultsContainer.innerHTML = html;
-        
-        // Update pagination
-        this.updatePagination(results.length, page);
-        
-        // Update results count
+        // Update results title and count
+        elements.resultsTitle.textContent = `Search Results`;
         elements.resultsCount.textContent = `${results.length} papers found`;
-    },
 
-    createResultCard(paper, query) {
-        const similarityPercent = (paper.similarity * 100).toFixed(1);
-        const highlightedTitle = utils.highlight(paper.title, query);
-        const highlightedAbstract = utils.highlight(paper.abstract, query);
-        
-        return `
-            <div class="result-card" data-paper-id="${paper.id}">
+        // Render result cards
+        elements.resultsContainer.innerHTML = pageResults.map(paper => `
+            <div class="result-card">
                 <div class="result-header">
-                    <div class="result-title">${highlightedTitle}</div>
-                    <div class="result-similarity">${similarityPercent}%</div>
+                    <h3 class="result-title">${utils.highlight(paper.title, elements.searchInput.value)}</h3>
+                    <div class="result-similarity">${(paper.similarity * 100).toFixed(1)}%</div>
                 </div>
-                
                 <div class="result-meta">
-                    <span>📅 ${paper.year}</span>
-                    <span>🏛️ ${paper.venue}</span>
-                    <span>📄 ${paper.id}</span>
+                    <span class="result-authors">${paper.authors.join(', ')}</span>
+                    <span class="result-venue">${paper.venue} ${paper.year}</span>
                 </div>
-                
-                <div class="result-authors">
-                    <strong>Authors:</strong> ${paper.authors.join(', ')}
-                </div>
-                
                 <div class="result-abstract">
-                    ${highlightedAbstract}
+                    ${utils.highlight(paper.abstract, elements.searchInput.value)}
                 </div>
-                
                 <div class="result-keywords">
                     ${paper.keywords.map(keyword => 
-                        `<span class="keyword-tag">${utils.sanitizeHtml(keyword)}</span>`
+                        `<span class="keyword">${utils.highlight(keyword, elements.searchInput.value)}</span>`
                     ).join('')}
                 </div>
-        </div>
-    `;
+                <div class="result-actions">
+                    <a href="${paper.url}" target="_blank" class="btn btn-primary">View Paper</a>
+                    <button class="btn btn-secondary" onclick="ui.citePaper('${paper.id}')">Cite</button>
+                </div>
+            </div>
+        `).join('');
+
+        this.updatePagination();
     },
 
-    updatePagination(totalResults, currentPage) {
-        totalPages = Math.ceil(totalResults / CONFIG.RESULTS_PER_PAGE);
-        
+    updatePagination() {
         if (totalPages <= 1) {
             elements.pagination.style.display = 'none';
             return;
         }
-        
+
         elements.pagination.style.display = 'flex';
         elements.prevPage.disabled = currentPage === 1;
         elements.nextPage.disabled = currentPage === totalPages;
         
-        const startResult = (currentPage - 1) * CONFIG.RESULTS_PER_PAGE + 1;
-        const endResult = Math.min(currentPage * CONFIG.RESULTS_PER_PAGE, totalResults);
-        
-        elements.paginationInfo.textContent = `Page ${currentPage} of ${totalPages} (${startResult}-${endResult} of ${totalResults})`;
+        elements.paginationInfo.textContent = `Page ${currentPage} of ${totalPages}`;
     },
 
-    async performSearch(query) {
-        if (isSearching) return;
-        
-        isSearching = true;
-        this.showLoading();
-        
-        try {
-            const results = await searchEngine.search(query);
-            this.renderResults(results, 1);
-            currentPage = 1;
-        } catch (error) {
-            console.error('Search error:', error);
-            this.showEmpty();
-        } finally {
-            isSearching = false;
-            this.hideLoading();
+    citePaper(paperId) {
+        const paper = papersData.find(p => p.id === paperId);
+        if (paper) {
+            const citation = `${paper.authors.join(', ')}. "${paper.title}." ${paper.venue}, ${paper.year}.`;
+            navigator.clipboard.writeText(citation).then(() => {
+                alert('Citation copied to clipboard!');
+            });
         }
     },
 
-    applyFiltersAndSearch() {
+    toggleDarkMode() {
+        document.body.classList.toggle('dark-mode');
+        const isDark = document.body.classList.contains('dark-mode');
+        localStorage.setItem('darkMode', isDark);
+        
+        const toggleIcon = elements.darkModeToggle.querySelector('.toggle-icon');
+        toggleIcon.textContent = isDark ? '☀️' : '🌙';
+    },
+
+    initializeDarkMode() {
+        const savedMode = localStorage.getItem('darkMode');
+        if (savedMode === 'true') {
+            this.toggleDarkMode();
+        }
+    }
+};
+
+// Event handlers
+const eventHandlers = {
+    async performSearch() {
+        if (isSearching) return;
+        
+        isSearching = true;
+        ui.showLoading();
+        
+        try {
+            const query = elements.searchInput.value.trim();
+            const results = await searchEngine.search(query);
+            this.renderResults(results, 1);
+        } catch (error) {
+            console.error('Search error:', error);
+            ui.showEmpty();
+        } finally {
+            isSearching = false;
+        }
+    },
+
+    async performFilteredSearch() {
         const query = elements.searchInput.value.trim();
         const filteredResults = searchEngine.applyFilters();
         
@@ -357,65 +451,30 @@ const ui = {
             
             this.renderResults(searchResults, 1);
         } else {
-            // Just show filtered results
             this.renderResults(filteredResults, 1);
         }
-        
-        currentPage = 1;
-    }
-};
-
-// Dark mode module
-const darkMode = {
-    init() {
-        const savedTheme = localStorage.getItem('theme');
-        const prefersDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-        
-        if (savedTheme) {
-            document.documentElement.setAttribute('data-theme', savedTheme);
-        } else if (prefersDark) {
-            document.documentElement.setAttribute('data-theme', 'dark');
-        }
-        
-        this.updateToggleIcon();
     },
 
-    toggle() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        
-        document.documentElement.setAttribute('data-theme', newTheme);
-        localStorage.setItem('theme', newTheme);
-        this.updateToggleIcon();
+    executeDemoSearch(query) {
+        elements.searchInput.value = query;
+        this.performSearch();
     },
 
-    updateToggleIcon() {
-        const currentTheme = document.documentElement.getAttribute('data-theme');
-        const icon = elements.darkModeToggle.querySelector('.toggle-icon');
-        icon.textContent = currentTheme === 'dark' ? '☀️' : '🌙';
-    }
-};
-
-// Event handlers
-const eventHandlers = {
-    init() {
-        // Search input events
+    initializeEventListeners() {
+        // Search input with debounce
         elements.searchInput.addEventListener('input', utils.debounce((e) => {
-            const query = e.target.value.trim();
-            if (query) {
-                ui.performSearch(query);
+            if (e.target.value.trim()) {
+                this.performSearch();
             } else {
-                ui.applyFiltersAndSearch();
+                this.renderResults(papersData, 1);
             }
         }, CONFIG.DEBOUNCE_DELAY));
 
+        // Enter key search
         elements.searchInput.addEventListener('keypress', (e) => {
             if (e.key === 'Enter') {
                 e.preventDefault();
-                const query = e.target.value.trim();
-                if (query) {
-                    ui.performSearch(query);
-                }
+                this.performSearch();
             }
         });
 
@@ -423,84 +482,72 @@ const eventHandlers = {
         elements.searchButton.addEventListener('click', () => {
             const query = elements.searchInput.value.trim();
             if (query) {
-                ui.performSearch(query);
+                this.performSearch();
             }
         });
 
-        // Example queries
-        document.querySelectorAll('.example-query').forEach(button => {
-            button.addEventListener('click', (e) => {
-                const query = e.target.dataset.query;
+        // Example query buttons
+        document.querySelectorAll('.example-query').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const query = btn.textContent.trim();
                 elements.searchInput.value = query;
-                ui.performSearch(query);
+                this.performSearch();
             });
         });
 
-        // Filter events
-        elements.yearRange.addEventListener('change', () => ui.applyFiltersAndSearch());
-        elements.venueFilter.addEventListener('change', () => ui.applyFiltersAndSearch());
-        elements.authorFilter.addEventListener('input', utils.debounce(() => ui.applyFiltersAndSearch(), CONFIG.DEBOUNCE_DELAY));
+        // Filter controls
+        elements.yearRange.addEventListener('change', () => this.performFilteredSearch());
+        elements.venueFilter.addEventListener('input', utils.debounce(() => this.performFilteredSearch(), 300));
+        elements.authorFilter.addEventListener('input', utils.debounce(() => this.performFilteredSearch(), 300));
 
-        // Pagination events
+        // Pagination
         elements.prevPage.addEventListener('click', () => {
             if (currentPage > 1) {
-                currentPage--;
-                ui.renderResults(filteredPapers, currentPage);
+                this.renderResults(filteredPapers, currentPage - 1);
             }
         });
 
         elements.nextPage.addEventListener('click', () => {
             if (currentPage < totalPages) {
-                currentPage++;
-                ui.renderResults(filteredPapers, currentPage);
+                this.renderResults(filteredPapers, currentPage + 1);
             }
         });
 
         // Dark mode toggle
-        elements.darkModeToggle.addEventListener('click', () => darkMode.toggle());
-
-        // Result card clicks
-        elements.resultsContainer.addEventListener('click', (e) => {
-            const card = e.target.closest('.result-card');
-            if (card) {
-                const paperId = card.dataset.paperId;
-                const paper = papersData.find(p => p.id === paperId);
-                if (paper && paper.url) {
-                    window.open(paper.url, '_blank');
-                }
-            }
+        elements.darkModeToggle.addEventListener('click', () => {
+            ui.toggleDarkMode();
         });
     }
 };
 
 // Initialize application
-async function init() {
-    try {
+const app = {
+    async init() {
+        console.log('🚀 Initializing Vector Similarity Search Engine...');
+        
         // Load data
         await dataLoader.loadPapers();
         
-        // Initialize dark mode
-        darkMode.init();
-        
-        // Initialize event handlers
-        eventHandlers.init();
+        // Initialize UI
+        ui.initializeDarkMode();
+        eventHandlers.initializeEventListeners();
         
         // Show initial results
         ui.renderResults(papersData, 1);
         
-        console.log('Vector Similarity Search Engine initialized successfully');
-    } catch (error) {
-        console.error('Initialization error:', error);
+        console.log('✅ Application initialized successfully');
+        console.log(`📊 Loaded ${papersData.length} papers`);
+        console.log(`🔗 API Base URL: ${CONFIG.API_BASE_URL}`);
     }
-}
+};
 
 // Start the application when DOM is loaded
-document.addEventListener('DOMContentLoaded', init);
+document.addEventListener('DOMContentLoaded', () => {
+    app.init();
+});
 
-// Export for potential external use
-window.VectorSearchEngine = {
-    searchEngine,
-    ui,
-    utils,
-    CONFIG
-};
+// Export for global access
+window.app = app;
+window.ui = ui;
+window.searchEngine = searchEngine;
+window.eventHandlers = eventHandlers;
