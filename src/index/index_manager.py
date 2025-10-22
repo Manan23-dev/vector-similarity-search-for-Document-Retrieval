@@ -1,160 +1,300 @@
+import logging
 import hnswlib
 import numpy as np
-import logging
-import os
+from typing import List, Dict, Any, Tuple, Optional
+import json
 import pickle
-from typing import List, Tuple, Optional
+from pathlib import Path
+import os
 
+# Configure logging
+logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 class IndexManager:
-    def __init__(self, dim=384, max_elements=10000, index_path: Optional[str] = None):
+    def __init__(self, embedding_dim: int, index_path: str = "data/vector_index"):
         """
-        Initialize the HNSW index manager.
+        Initialize the HNSWlib index manager.
+        UPDATED: Proper HNSWlib implementation for scalable vector search
         
         Args:
-            dim (int): Dimension of the embeddings
-            max_elements (int): Maximum number of elements the index can hold
-            index_path (str): Path to save/load the index
+            embedding_dim: Dimension of the embeddings
+            index_path: Path to save/load the index
         """
-        self.dim = dim
-        self.max_elements = max_elements
-        self.index_path = index_path
-        self.document_ids = []  # Store document IDs for retrieval
-        self.documents = []     # Store actual documents
+        self.embedding_dim = embedding_dim
+        self.index_path = Path(index_path)
+        self.index_path.mkdir(parents=True, exist_ok=True)
         
-        # Initialize HNSW index
-        self.index = hnswlib.Index(space='cosine', dim=dim)
-        self.index.init_index(
-            max_elements=max_elements, 
-            ef_construction=200, 
-            M=16
-        )
-        self.index.set_ef(50)  # Controls search speed vs accuracy
+        # Initialize HNSWlib index
+        self.index = hnswlib.Index(space='cosine', dim=embedding_dim)
         
-        logger.info(f"Initialized HNSW index with dim={dim}, max_elements={max_elements}")
-
-    def add_embeddings(self, embeddings: np.ndarray, documents: List[str], document_ids: Optional[List[str]] = None):
+        # Metadata storage
+        self.document_ids = []
+        self.documents = []
+        self.is_initialized = False
+        
+        logger.info(f"Initialized IndexManager with embedding dimension: {embedding_dim}")
+    
+    def add_embeddings(self, embeddings: np.ndarray, document_ids: List[str], 
+                      documents: List[Dict[str, Any]], 
+                      ef_construction: int = 200, 
+                      M: int = 16) -> None:
         """
-        Add embeddings and their corresponding documents to the index.
+        Add embeddings to the HNSWlib index.
+        UPDATED: Proper HNSWlib configuration for large-scale search
         
         Args:
-            embeddings (np.ndarray): Array of embeddings to add
-            documents (List[str]): List of document texts
-            document_ids (List[str], optional): List of document IDs. If None, auto-generated.
+            embeddings: Numpy array of embeddings
+            document_ids: List of document IDs
+            documents: List of document dictionaries
+            ef_construction: Construction parameter for HNSWlib
+            M: Maximum number of bi-directional links for each node
         """
         try:
-            if len(embeddings) != len(documents):
-                raise ValueError("Number of embeddings must match number of documents")
+            if len(embeddings) == 0:
+                logger.warning("No embeddings to add")
+                return
             
-            # Generate document IDs if not provided
-            if document_ids is None:
-                start_id = len(self.document_ids)
-                document_ids = [f"doc_{start_id + i}" for i in range(len(documents))]
+            logger.info(f"Adding {len(embeddings)} embeddings to HNSWlib index")
+            
+            # Initialize index with first batch
+            if not self.is_initialized:
+                self.index.init_index(
+                    max_elements=len(embeddings),
+                    ef_construction=ef_construction,
+                    M=M
+                )
+                self.is_initialized = True
+                logger.info(f"Initialized HNSWlib index with max_elements={len(embeddings)}")
             
             # Add embeddings to index
-            ids = np.arange(len(self.document_ids), len(self.document_ids) + len(embeddings))
-            self.index.add_items(embeddings, ids)
+            self.index.add_items(embeddings, document_ids)
             
-            # Store document metadata
+            # Store metadata
             self.document_ids.extend(document_ids)
             self.documents.extend(documents)
             
-            logger.info(f"Added {len(embeddings)} embeddings to index. Total: {len(self.documents)}")
+            logger.info(f"Successfully added {len(embeddings)} embeddings to index")
             
         except Exception as e:
             logger.error(f"Failed to add embeddings: {e}")
             raise
-
-    def search(self, query_embedding: np.ndarray, top_k: int = 5) -> Tuple[List[str], List[float], List[str]]:
+    
+    def search(self, query_embedding: np.ndarray, k: int = 10, 
+               ef: int = 50) -> Tuple[List[str], List[float], List[Dict[str, Any]]]:
         """
-        Search for similar documents.
+        Search for similar documents using HNSWlib.
+        UPDATED: Optimized search with proper ef parameter
         
         Args:
-            query_embedding (np.ndarray): Query embedding vector
-            top_k (int): Number of top results to return
+            query_embedding: Query embedding vector
+            k: Number of results to return
+            ef: Search parameter (higher = more accurate but slower)
             
         Returns:
-            Tuple[List[str], List[float], List[str]]: (documents, distances, document_ids)
+            Tuple of (document_ids, distances, documents)
         """
         try:
-            if len(self.documents) == 0:
-                logger.warning("No documents in index")
+            if not self.is_initialized:
+                logger.warning("Index not initialized")
                 return [], [], []
             
+            # Set ef parameter for search
+            self.index.set_ef(ef)
+            
             # Perform search
-            labels, distances = self.index.knn_query(query_embedding, k=min(top_k, len(self.documents)))
+            indices, distances = self.index.knn_query(query_embedding, k=k)
             
-            # Convert labels to document information
-            result_documents = [self.documents[label] for label in labels[0]]
-            result_ids = [self.document_ids[label] for label in labels[0]]
+            # Convert indices to document IDs and get documents
+            result_ids = [self.document_ids[i] for i in indices[0]]
+            result_distances = distances[0].tolist()
+            result_documents = [self.documents[i] for i in indices[0]]
             
-            logger.info(f"Found {len(result_documents)} similar documents")
-            return result_documents, distances[0].tolist(), result_ids
+            logger.info(f"Found {len(result_ids)} similar documents")
+            return result_ids, result_distances, result_documents
             
         except Exception as e:
             logger.error(f"Search failed: {e}")
-            raise
-
-    def get_stats(self) -> dict:
-        """Get index statistics."""
-        return {
-            "total_documents": len(self.documents),
-            "embedding_dimension": self.dim,
-            "max_elements": self.max_elements,
-            "current_size": len(self.documents)
-        }
-
-    def save_index(self, path: Optional[str] = None):
-        """Save the index and metadata to disk."""
-        save_path = path or self.index_path
-        if not save_path:
-            logger.warning("No save path specified")
-            return
+            return [], [], []
+    
+    def search_with_threshold(self, query_embedding: np.ndarray, k: int = 10, 
+                            threshold: float = 0.0, ef: int = 50) -> Tuple[List[str], List[float], List[Dict[str, Any]]]:
+        """
+        Search for similar documents with similarity threshold.
+        UPDATED: Threshold-based filtering
         
+        Args:
+            query_embedding: Query embedding vector
+            k: Maximum number of results to return
+            threshold: Minimum similarity threshold (0-1)
+            ef: Search parameter
+            
+        Returns:
+            Tuple of (document_ids, distances, documents)
+        """
         try:
-            # Save HNSW index
-            self.index.save_index(save_path + ".hnsw")
+            # Get more results than needed to filter by threshold
+            search_k = min(k * 3, len(self.document_ids))
+            indices, distances = self.index.knn_query(query_embedding, k=search_k)
+            
+            # Convert distances to similarities (1 - distance for cosine similarity)
+            similarities = 1 - distances[0]
+            
+            # Filter by threshold
+            valid_indices = similarities >= threshold
+            
+            # Limit to k results
+            valid_indices = valid_indices[:k]
+            
+            result_ids = [self.document_ids[indices[0][i]] for i in range(len(valid_indices)) if valid_indices[i]]
+            result_distances = distances[0][valid_indices].tolist()
+            result_documents = [self.documents[indices[0][i]] for i in range(len(valid_indices)) if valid_indices[i]]
+            
+            logger.info(f"Found {len(result_ids)} documents above threshold {threshold}")
+            return result_ids, result_distances, result_documents
+            
+        except Exception as e:
+            logger.error(f"Threshold search failed: {e}")
+            return [], [], []
+    
+    def get_stats(self) -> Dict[str, Any]:
+        """
+        Get statistics about the index.
+        UPDATED: Comprehensive statistics
+        
+        Returns:
+            Dictionary with index statistics
+        """
+        try:
+            stats = {
+                "total_documents": len(self.document_ids),
+                "embedding_dimension": self.embedding_dim,
+                "is_initialized": self.is_initialized,
+                "index_path": str(self.index_path),
+                "max_elements": self.index.get_max_elements() if self.is_initialized else 0,
+                "current_count": self.index.get_current_count() if self.is_initialized else 0,
+                "ef_construction": self.index.get_ef_construction() if self.is_initialized else 0,
+                "M": self.index.get_M() if self.is_initialized else 0
+            }
+            
+            # Add document source statistics
+            if self.documents:
+                sources = {}
+                for doc in self.documents:
+                    source = doc.get("source", "unknown")
+                    sources[source] = sources.get(source, 0) + 1
+                stats["sources"] = sources
+            
+            return stats
+            
+        except Exception as e:
+            logger.error(f"Failed to get stats: {e}")
+            return {"error": str(e)}
+    
+    def save_index(self) -> None:
+        """
+        Save the HNSWlib index and metadata to disk.
+        UPDATED: Proper serialization
+        
+        """
+        try:
+            if not self.is_initialized:
+                logger.warning("No index to save")
+                return
+            
+            # Save HNSWlib index
+            index_file = self.index_path / "hnswlib_index.bin"
+            self.index.save_index(str(index_file))
             
             # Save metadata
             metadata = {
-                'document_ids': self.document_ids,
-                'documents': self.documents,
-                'dim': self.dim,
-                'max_elements': self.max_elements
+                "document_ids": self.document_ids,
+                "documents": self.documents,
+                "embedding_dim": self.embedding_dim,
+                "is_initialized": self.is_initialized
             }
             
-            with open(save_path + ".metadata", 'wb') as f:
-                pickle.dump(metadata, f)
+            metadata_file = self.index_path / "metadata.json"
+            with open(metadata_file, 'w', encoding='utf-8') as f:
+                json.dump(metadata, f, indent=2, ensure_ascii=False)
             
-            logger.info(f"Index saved to {save_path}")
+            logger.info(f"Index saved to {self.index_path}")
             
         except Exception as e:
             logger.error(f"Failed to save index: {e}")
             raise
-
-    def load_index(self, path: Optional[str] = None):
-        """Load the index and metadata from disk."""
-        load_path = path or self.index_path
-        if not load_path or not os.path.exists(load_path + ".hnsw"):
-            logger.warning(f"No index found at {load_path}")
-            return
+    
+    def load_index(self) -> bool:
+        """
+        Load the HNSWlib index and metadata from disk.
+        UPDATED: Proper deserialization
         
+        Returns:
+            True if successful, False otherwise
+        """
         try:
-            # Load HNSW index
-            self.index.load_index(load_path + ".hnsw")
+            index_file = self.index_path / "hnswlib_index.bin"
+            metadata_file = self.index_path / "metadata.json"
+            
+            if not index_file.exists() or not metadata_file.exists():
+                logger.warning("Index files not found")
+                return False
             
             # Load metadata
-            with open(load_path + ".metadata", 'rb') as f:
-                metadata = pickle.load(f)
+            with open(metadata_file, 'r', encoding='utf-8') as f:
+                metadata = json.load(f)
             
-            self.document_ids = metadata['document_ids']
-            self.documents = metadata['documents']
-            self.dim = metadata['dim']
-            self.max_elements = metadata['max_elements']
+            self.document_ids = metadata["document_ids"]
+            self.documents = metadata["documents"]
+            self.embedding_dim = metadata["embedding_dim"]
             
-            logger.info(f"Index loaded from {load_path}. Documents: {len(self.documents)}")
+            # Load HNSWlib index
+            self.index.load_index(str(index_file))
+            self.is_initialized = True
+            
+            logger.info(f"Index loaded from {self.index_path}")
+            logger.info(f"Loaded {len(self.document_ids)} documents")
+            return True
             
         except Exception as e:
             logger.error(f"Failed to load index: {e}")
+            return False
+    
+    def rebuild_index(self, embeddings: np.ndarray, document_ids: List[str], 
+                     documents: List[Dict[str, Any]], 
+                     ef_construction: int = 200, M: int = 16) -> None:
+        """
+        Rebuild the entire index from scratch.
+        UPDATED: Complete rebuild functionality
+        
+        Args:
+            embeddings: All embeddings to index
+            document_ids: All document IDs
+            documents: All document dictionaries
+            ef_construction: Construction parameter
+            M: Maximum number of bi-directional links
+        """
+        try:
+            logger.info("Rebuilding HNSWlib index from scratch")
+            
+            # Clear existing data
+            self.document_ids = []
+            self.documents = []
+            self.is_initialized = False
+            
+            # Initialize new index
+            self.index = hnswlib.Index(space='cosine', dim=self.embedding_dim)
+            self.index.init_index(
+                max_elements=len(embeddings),
+                ef_construction=ef_construction,
+                M=M
+            )
+            
+            # Add all embeddings
+            self.add_embeddings(embeddings, document_ids, documents, ef_construction, M)
+            
+            logger.info("Index rebuild completed")
+            
+        except Exception as e:
+            logger.error(f"Failed to rebuild index: {e}")
             raise
