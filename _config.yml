@@ -1,0 +1,22 @@
+# Jekyll configuration to disable processing
+plugins: []
+markdown: kramdown
+highlighter: rouge
+baseurl: ""
+url: ""
+
+# Disable Jekyll processing
+exclude:
+  - README.md.backup
+  - DEPLOYMENT.md
+  - RENDER_DEPLOYMENT.md
+  - tests/
+  - src/
+  - main.py
+  - requirements.txt
+  - Dockerfile
+  - docker-compose.yml
+  - docker-deploy.sh
+  - nginx.conf
+  - .dockerignore
+  - .gitignore
