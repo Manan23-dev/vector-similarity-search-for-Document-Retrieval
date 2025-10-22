@@ -204,18 +204,28 @@ function displayAPIResults(data) {
 
     data.results.forEach((result, index) => {
         const similarityPercent = Math.round(result.score * 100);
+        const truncatedText = result.document.length > 200 ? result.document.substring(0, 200) + '...' : result.document;
+        
         html += `
-            <div class="result-card">
+            <div class="result-card" onclick="expandResult(${index})">
                 <div class="result-header">
                     <span class="result-number">#${index + 1}</span>
                     <span class="similarity-score">${similarityPercent}% match</span>
+                    <span class="expand-icon">📖 Click to read full content</span>
                 </div>
                 <div class="result-content">
-                    <p class="result-text">${result.document}</p>
+                    <p class="result-text" id="text-${index}">${truncatedText}</p>
                     <div class="result-meta">
                         <span class="document-id">Document ID: ${result.document_id}</span>
                         <span class="distance">Distance: ${result.distance.toFixed(4)}</span>
                     </div>
+                </div>
+                <div class="full-content" id="full-${index}" style="display: none;">
+                    <div class="full-text">
+                        <h4>📄 Full Document Content:</h4>
+                        <p>${result.document}</p>
+                    </div>
+                    <button class="close-btn" onclick="event.stopPropagation(); collapseResult(${index})">✕ Close</button>
                 </div>
             </div>
         `;
@@ -360,6 +370,26 @@ function displayFallbackQA(query) {
             </div>
         </div>
     `;
+}
+
+// Expand result function
+function expandResult(index) {
+    const fullContent = document.getElementById(`full-${index}`);
+    const textElement = document.getElementById(`text-${index}`);
+    
+    if (fullContent.style.display === 'none') {
+        fullContent.style.display = 'block';
+        textElement.style.display = 'none';
+    }
+}
+
+// Collapse result function
+function collapseResult(index) {
+    const fullContent = document.getElementById(`full-${index}`);
+    const textElement = document.getElementById(`text-${index}`);
+    
+    fullContent.style.display = 'none';
+    textElement.style.display = 'block';
 }
 
 // Initialize the page
