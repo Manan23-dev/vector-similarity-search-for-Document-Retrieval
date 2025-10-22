@@ -1,4 +1,4 @@
-/* CSS Variables for Theme Support */
+/* CSS Variables for Theme Support - UPDATED: Light Colors */
 :root {
     --bg-primary: #ffffff;
     --bg-secondary: #f8f9fa;
@@ -8,12 +8,12 @@
     --text-muted: #adb5bd;
     --border-color: #dee2e6;
     --shadow: rgba(0, 0, 0, 0.1);
-    --accent-primary: #667eea;
-    --accent-secondary: #764ba2;
-    --success: #28a745;
-    --warning: #ffc107;
-    --danger: #dc3545;
-    --info: #17a2b8;
+    --accent-primary: #a8c8ec;
+    --accent-secondary: #b8a8d8;
+    --success: #a8d5a8;
+    --warning: #f5d5a8;
+    --danger: #f5a8a8;
+    --info: #a8d5d5;
 }
 
 /* Dark Mode Variables */
@@ -39,7 +39,7 @@
 
 body {
     font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-    background: linear-gradient(135deg, var(--accent-primary) 0%, var(--accent-secondary) 100%);
+    background: linear-gradient(135deg, #e8f4fd 0%, #f0e8fd 100%);
     min-height: 100vh;
     padding: 20px;
     line-height: 1.6;
@@ -95,7 +95,7 @@ body {
     color: var(--text-primary);
     font-size: 2.5em;
     margin-bottom: 10px;
-    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
+    background: linear-gradient(45deg, #a8c8ec, #b8a8d8);
     -webkit-background-clip: text;
     -webkit-text-fill-color: transparent;
     background-clip: text;
@@ -182,8 +182,8 @@ body {
 
 .search-btn {
     padding: 15px 25px;
-    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
-    color: white;
+    background: linear-gradient(45deg, #a8c8ec, #b8a8d8);
+    color: #2c3e50;
     border: none;
     border-radius: 25px;
     font-size: 1.1em;
@@ -197,7 +197,7 @@ body {
 
 .search-btn:hover {
     transform: translateY(-2px);
-    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 8px 20px rgba(168, 200, 236, 0.4);
 }
 
 .search-btn:active {
@@ -234,10 +234,10 @@ body {
 }
 
 .example-query:hover {
-    background: var(--accent-primary);
-    color: white;
+    background: #a8c8ec;
+    color: #2c3e50;
     transform: translateY(-2px);
-    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+    box-shadow: 0 4px 12px rgba(168, 200, 236, 0.4);
 }
 
 /* Filters Section */
@@ -391,8 +391,8 @@ body {
 }
 
 .result-similarity {
-    background: linear-gradient(45deg, var(--accent-primary), var(--accent-secondary));
-    color: white;
+    background: linear-gradient(45deg, #a8c8ec, #b8a8d8);
+    color: #2c3e50;
     padding: 5px 12px;
     border-radius: 15px;
     font-size: 0.9em;
@@ -464,8 +464,8 @@ body {
 }
 
 .pagination-btn:hover:not(:disabled) {
-    background: var(--accent-primary);
-    color: white;
+    background: #a8c8ec;
+    color: #2c3e50;
 }
 
 .pagination-btn:disabled {
