@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vector Similarity Search Engine - Research Paper Discovery</title>
+    <meta name="description" content="Advanced vector similarity search engine for research paper discovery with real-time search, filtering, and dark mode support">
+    <meta name="keywords" content="vector search, machine learning, research papers, AI, similarity search, NLP, computer vision">
+    <link rel="stylesheet" href="assets/css/demo.css">
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
+</head>
+<body>
+    <!-- Dark mode toggle -->
+    <button id="darkModeToggle" class="dark-mode-toggle" aria-label="Toggle dark mode">
+        <span class="toggle-icon">🌙</span>
+    </button>
+
+    <div class="container">
+        <!-- Header -->
+        <header class="header">
+            <h1>🔍 Vector Similarity Search Engine</h1>
+            <p>Advanced Research Paper Discovery with Real-time Search & AI-powered Similarity</p>
+        </header>
+
+        <!-- Metrics Panel -->
+        <div class="metrics-panel">
+            <div class="metric">
+                <span class="metric-label">Dataset Size</span>
+                <span class="metric-value" id="datasetSize">50,000+</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Precision</span>
+                <span class="metric-value" id="precision">95.2%</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Vector Dims</span>
+                <span class="metric-value" id="vectorDims">768D</span>
+            </div>
+            <div class="metric">
+                <span class="metric-label">Query Speed</span>
+                <span class="metric-value" id="querySpeed">--ms</span>
+            </div>
+        </div>
+
+        <!-- Search Section -->
+        <section class="search-section">
+            <div class="search-container">
+                <div class="search-input-container">
+                    <input 
+                        type="text" 
+                        id="searchInput" 
+                        placeholder="Search research papers... (e.g., 'transformer attention', 'computer vision')" 
+                        aria-label="Search research papers"
+                        autocomplete="off"
+                    />
+                    <button id="searchButton" class="search-btn" aria-label="Search">
+                        <span class="search-icon">🔍</span>
+                        Search
+                    </button>
+                </div>
+                
+                <!-- Example Queries -->
+                <div class="example-queries">
+                    <h3>Try these queries:</h3>
+                    <div class="query-tabs">
+                        <button class="example-query" data-query="transformer attention">Transformer Attention</button>
+                        <button class="example-query" data-query="computer vision">Computer Vision</button>
+                        <button class="example-query" data-query="reinforcement learning">Reinforcement Learning</button>
+                        <button class="example-query" data-query="generative adversarial networks">GANs</button>
+                        <button class="example-query" data-query="neural machine translation">Neural Translation</button>
+                        <button class="example-query" data-query="robotics navigation">Robotics</button>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Filters Section -->
+        <section class="filters-section">
+            <div class="filters-container">
+                <h3>Filters</h3>
+                <div class="filters-grid">
+                    <div class="filter-group">
+                        <label for="yearRange">Year Range:</label>
+                        <select id="yearRange" aria-label="Filter by year range">
+                            <option value="">All Years</option>
+                            <option value="2020-2024">2020-2024</option>
+                            <option value="2015-2019">2015-2019</option>
+                            <option value="2010-2014">2010-2014</option>
+                            <option value="before-2010">Before 2010</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="venueFilter">Venue:</label>
+                        <select id="venueFilter" aria-label="Filter by venue">
+                            <option value="">All Venues</option>
+                            <option value="NIPS">NIPS</option>
+                            <option value="ICML">ICML</option>
+                            <option value="ICLR">ICLR</option>
+                            <option value="CVPR">CVPR</option>
+                            <option value="ICCV">ICCV</option>
+                            <option value="ECCV">ECCV</option>
+                            <option value="Nature">Nature</option>
+                            <option value="NAACL">NAACL</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label for="authorFilter">Author:</label>
+                        <input type="text" id="authorFilter" placeholder="Filter by author..." aria-label="Filter by author">
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Results Section -->
+        <section class="results-section" id="resultsSection">
+            <div class="results-header">
+                <h2 id="resultsTitle">Search Results</h2>
+                <div class="results-count" id="resultsCount"></div>
+            </div>
+            
+            <!-- Loading State -->
+            <div class="loading-state" id="loadingState" style="display: none;">
+                <div class="loading-spinner"></div>
+                <p>Searching papers...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <div class="empty-icon">📚</div>
+                <h3>No papers found</h3>
+                <p>Try adjusting your search terms or filters</p>
+            </div>
+
+            <!-- Results Container -->
+            <div class="results-container" id="resultsContainer">
+                <!-- Results will be populated here -->
+            </div>
+
+            <!-- Pagination -->
+            <div class="pagination" id="pagination" style="display: none;">
+                <button id="prevPage" class="pagination-btn" disabled>Previous</button>
+                <span class="pagination-info" id="paginationInfo"></span>
+                <button id="nextPage" class="pagination-btn" disabled>Next</button>
+            </div>
+        </section>
+
+        <!-- Footer -->
+        <footer class="footer">
+            <div class="footer-content">
+                <p>Built with ❤️ using FastAPI, HNSWlib, and PyTorch</p>
+                <div class="footer-links">
+                    <a href="https://github.com/Manan23-dev/vector-similarity-search-for-Document-Retrieval" target="_blank">GitHub</a>
+                    <a href="https://vector-similarity-search-for-document.onrender.com/docs" target="_blank">API Docs</a>
+                    <a href="https://www.linkedin.com/in/mananpatel23/" target="_blank">LinkedIn</a>
+                </div>
+            </div>
+        </footer>
+    </div>
+
+    <script src="assets/js/demo.js"></script>
+</body>
+</html>

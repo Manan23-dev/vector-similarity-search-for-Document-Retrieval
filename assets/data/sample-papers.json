@@ -1,0 +1,262 @@
+{
+  "papers": [
+    {
+      "id": "1",
+      "title": "Attention Is All You Need",
+      "abstract": "We propose a new simple network architecture, the Transformer, based solely on attention mechanisms, dispensing with recurrence and convolutions entirely. Experiments on two machine translation tasks show these models to be superior in quality while being more parallelizable and requiring significantly less time to train.",
+      "authors": ["Ashish Vaswani", "Noam Shazeer", "Niki Parmar", "Jakob Uszkoreit"],
+      "year": 2017,
+      "venue": "NIPS",
+      "keywords": ["Transformer", "Attention", "Neural Networks", "NLP", "Machine Translation"],
+      "url": "https://arxiv.org/abs/1706.03762"
+    },
+    {
+      "id": "2", 
+      "title": "BERT: Pre-training of Deep Bidirectional Transformers for Language Understanding",
+      "abstract": "We introduce a new language representation model called BERT, which stands for Bidirectional Encoder Representations from Transformers. Unlike recent language representation models, BERT is designed to pre-train deep bidirectional representations from unlabeled text.",
+      "authors": ["Jacob Devlin", "Ming-Wei Chang", "Kenton Lee", "Kristina Toutanova"],
+      "year": 2019,
+      "venue": "NAACL",
+      "keywords": ["BERT", "Transformers", "Pre-training", "Language Models", "Bidirectional"],
+      "url": "https://arxiv.org/abs/1810.04805"
+    },
+    {
+      "id": "3",
+      "title": "Deep Residual Learning for Image Recognition", 
+      "abstract": "We present a residual learning framework to ease the training of networks that are substantially deeper than those used previously. We explicitly reformulate the layers as learning residual functions with reference to the layer inputs, instead of learning unreferenced functions.",
+      "authors": ["Kaiming He", "Xiangyu Zhang", "Shaoqing Ren", "Jian Sun"],
+      "year": 2016,
+      "venue": "CVPR",
+      "keywords": ["ResNet", "Computer Vision", "Deep Learning", "Image Recognition", "CNN"],
+      "url": "https://arxiv.org/abs/1512.03385"
+    },
+    {
+      "id": "4",
+      "title": "Generative Adversarial Networks",
+      "abstract": "We propose a new framework for estimating generative models via an adversarial process, in which we simultaneously train two models: a generative model G that captures the data distribution, and a discriminative model D that estimates the probability that a sample came from the training data rather than G.",
+      "authors": ["Ian J. Goodfellow", "Jean Pouget-Abadie", "Mehdi Mirza", "Bing Xu"],
+      "year": 2014,
+      "venue": "NIPS", 
+      "keywords": ["GANs", "Generative Models", "Adversarial Training", "Deep Learning", "Game Theory"],
+      "url": "https://arxiv.org/abs/1406.2661"
+    },
+    {
+      "id": "5",
+      "title": "You Only Look Once: Unified, Real-Time Object Detection",
+      "abstract": "We present YOLO, a new approach to object detection. Prior work on object detection repurposes classifiers to perform detection. Instead, we frame object detection as a regression problem to spatially separated bounding boxes and associated class probabilities.",
+      "authors": ["Joseph Redmon", "Santosh Divvala", "Ross Girshick", "Ali Farhadi"],
+      "year": 2016,
+      "venue": "CVPR",
+      "keywords": ["YOLO", "Object Detection", "Computer Vision", "Real-time", "CNN"],
+      "url": "https://arxiv.org/abs/1506.02640"
+    },
+    {
+      "id": "6",
+      "title": "Reinforcement Learning: An Introduction",
+      "abstract": "This book provides a clear and simple account of the key ideas and algorithms of reinforcement learning. The discussion ranges from the history of the field's intellectual foundations to the most recent developments and applications.",
+      "authors": ["Richard S. Sutton", "Andrew G. Barto"],
+      "year": 2018,
+      "venue": "MIT Press",
+      "keywords": ["Reinforcement Learning", "Q-Learning", "Policy Gradient", "Markov Decision Process", "RL"],
+      "url": "https://mitpress.mit.edu/books/reinforcement-learning"
+    },
+    {
+      "id": "7",
+      "title": "Human-level control through deep reinforcement learning",
+      "abstract": "The theory of reinforcement learning provides a normative account, deeply rooted in psychological and neuroscientific perspectives on animal behaviour, of how agents may optimize their control of an environment.",
+      "authors": ["Volodymyr Mnih", "Koray Kavukcuoglu", "David Silver", "Alex Graves"],
+      "year": 2015,
+      "venue": "Nature",
+      "keywords": ["Deep Q-Network", "DQN", "Atari", "Reinforcement Learning", "Deep Learning"],
+      "url": "https://www.nature.com/articles/nature14236"
+    },
+    {
+      "id": "8",
+      "title": "ImageNet Classification with Deep Convolutional Neural Networks",
+      "abstract": "We trained a large, deep convolutional neural network to classify the 1.2 million high-resolution images in the ImageNet LSVRC-2010 contest into the 1000 different classes.",
+      "authors": ["Alex Krizhevsky", "Ilya Sutskever", "Geoffrey E. Hinton"],
+      "year": 2012,
+      "venue": "NIPS",
+      "keywords": ["AlexNet", "CNN", "ImageNet", "Computer Vision", "Deep Learning"],
+      "url": "https://papers.nips.cc/paper/2012/hash/c399862d3b9d6b76c8436e924a68c45b-Abstract.html"
+    },
+    {
+      "id": "9",
+      "title": "Long Short-Term Memory",
+      "abstract": "Learning to store information over extended time intervals by recurrent backpropagation takes a very long time, mostly because of insufficient, decaying error backflow. We briefly review Hochreiter's (1991) analysis of this problem, then address it by introducing a novel, efficient, gradient based method called long short-term memory (LSTM).",
+      "authors": ["Sepp Hochreiter", "Jürgen Schmidhuber"],
+      "year": 1997,
+      "venue": "Neural Computation",
+      "keywords": ["LSTM", "RNN", "Recurrent Networks", "Memory", "Sequential Learning"],
+      "url": "https://www.bioinf.jku.at/publications/older/2604.pdf"
+    },
+    {
+      "id": "10",
+      "title": "GPT-3: Language Models are Few-Shot Learners",
+      "abstract": "We show that scaling up language models greatly improves task-agnostic, few-shot performance, sometimes even reaching competitiveness with prior state-of-the-art fine-tuning approaches.",
+      "authors": ["Tom B. Brown", "Benjamin Mann", "Nick Ryder", "Melanie Subbiah"],
+      "year": 2020,
+      "venue": "NeurIPS",
+      "keywords": ["GPT-3", "Language Models", "Few-shot Learning", "Transformers", "NLP"],
+      "url": "https://arxiv.org/abs/2005.14165"
+    },
+    {
+      "id": "11",
+      "title": "Mask R-CNN",
+      "abstract": "We present a conceptually simple, flexible, and general framework for object instance segmentation. Our approach efficiently detects objects in an image while simultaneously generating a high-quality segmentation mask for each instance.",
+      "authors": ["Kaiming He", "Georgia Gkioxari", "Piotr Dollár", "Ross Girshick"],
+      "year": 2017,
+      "venue": "ICCV",
+      "keywords": ["Mask R-CNN", "Instance Segmentation", "Object Detection", "Computer Vision", "CNN"],
+      "url": "https://arxiv.org/abs/1703.06870"
+    },
+    {
+      "id": "12",
+      "title": "Progressive Growing of GANs for Improved Quality, Stability, and Variation",
+      "abstract": "We describe a new training methodology for generative adversarial networks. The key idea is to grow both the generator and discriminator progressively: starting from a low resolution, we add new layers that model increasingly fine details as training progresses.",
+      "authors": ["Tero Karras", "Timo Aila", "Samuli Laine", "Jaakko Lehtinen"],
+      "year": 2017,
+      "venue": "ICLR",
+      "keywords": ["Progressive GAN", "GANs", "Generative Models", "Image Generation", "Deep Learning"],
+      "url": "https://arxiv.org/abs/1710.10196"
+    },
+    {
+      "id": "13",
+      "title": "Robotics: Science and Systems",
+      "abstract": "This paper presents a comprehensive survey of recent advances in robotics, covering perception, planning, control, and learning. We discuss the integration of machine learning techniques with traditional robotics approaches.",
+      "authors": ["John Leonard", "Wolfram Burgard", "Dieter Fox", "Sebastian Thrun"],
+      "year": 2018,
+      "venue": "RSS",
+      "keywords": ["Robotics", "SLAM", "Motion Planning", "Robot Learning", "Autonomous Systems"],
+      "url": "https://roboticsconference.org/"
+    },
+    {
+      "id": "14",
+      "title": "Neural Machine Translation by Jointly Learning to Align and Translate",
+      "abstract": "Neural machine translation is a recently proposed approach to machine translation based purely on neural networks. The proposed approach, called attention-based encoder-decoder, allows a model to automatically search for parts of a source sentence that are relevant to predicting a target word.",
+      "authors": ["Dzmitry Bahdanau", "Kyunghyun Cho", "Yoshua Bengio"],
+      "year": 2014,
+      "venue": "ICLR",
+      "keywords": ["Neural Machine Translation", "Attention Mechanism", "Encoder-Decoder", "NLP", "Machine Translation"],
+      "url": "https://arxiv.org/abs/1409.0473"
+    },
+    {
+      "id": "15",
+      "title": "StyleGAN: A Style-Based Generator Architecture for Generative Adversarial Networks",
+      "abstract": "We propose an alternative generator architecture for generative adversarial networks, borrowing from style transfer literature. The new architecture leads to an automatically learned, unsupervised separation of high-level attributes.",
+      "authors": ["Tero Karras", "Samuli Laine", "Timo Aila"],
+      "year": 2018,
+      "venue": "CVPR",
+      "keywords": ["StyleGAN", "GANs", "Style Transfer", "Image Generation", "Generative Models"],
+      "url": "https://arxiv.org/abs/1812.04948"
+    },
+    {
+      "id": "16",
+      "title": "End-to-End Object Detection with Transformers",
+      "abstract": "We present a new method that views object detection as a direct set prediction problem. Our approach streamlines the detection pipeline, effectively removing the need for many hand-designed components like a non-maximum suppression procedure or anchor generation.",
+      "authors": ["Nicolas Carion", "Francisco Massa", "Gabriel Synnaeve", "Nicolas Usunier"],
+      "year": 2020,
+      "venue": "ECCV",
+      "keywords": ["DETR", "Object Detection", "Transformers", "Computer Vision", "Set Prediction"],
+      "url": "https://arxiv.org/abs/2005.12872"
+    },
+    {
+      "id": "17",
+      "title": "Learning to Navigate in Complex Environments",
+      "abstract": "We present a learning-based approach to navigation in complex environments. Our method combines deep reinforcement learning with hierarchical planning to enable robots to navigate in previously unseen environments.",
+      "authors": ["Ashish Kumar", "Saurabh Gupta", "Jitendra Malik"],
+      "year": 2019,
+      "venue": "ICRA",
+      "keywords": ["Robot Navigation", "Reinforcement Learning", "Hierarchical Planning", "Robotics", "Deep RL"],
+      "url": "https://arxiv.org/abs/1611.03673"
+    },
+    {
+      "id": "18",
+      "title": "Vision Transformer (ViT): An Image is Worth 16x16 Words",
+      "abstract": "While the Transformer architecture has become the de-facto standard for natural language processing tasks, its applications to computer vision remain limited. In vision, attention is either applied in conjunction with convolutional networks, or used to replace certain components of convolutional networks.",
+      "authors": ["Alexey Dosovitskiy", "Lucas Beyer", "Alexander Kolesnikov", "Dirk Weissenborn"],
+      "year": 2020,
+      "venue": "ICLR",
+      "keywords": ["Vision Transformer", "ViT", "Computer Vision", "Transformers", "Image Classification"],
+      "url": "https://arxiv.org/abs/2010.11929"
+    },
+    {
+      "id": "19",
+      "title": "CLIP: Connecting Text and Images",
+      "abstract": "We present CLIP (Contrastive Language-Image Pre-training), a neural network trained on a variety of (image, text) pairs. It can be instructed in natural language to perform a great variety of classification benchmarks.",
+      "authors": ["Alec Radford", "Jong Wook Kim", "Chris Hallacy", "Aditya Ramesh"],
+      "year": 2021,
+      "venue": "ICML",
+      "keywords": ["CLIP", "Multimodal Learning", "Contrastive Learning", "Computer Vision", "NLP"],
+      "url": "https://arxiv.org/abs/2103.00020"
+    },
+    {
+      "id": "20",
+      "title": "DALL-E: Creating Images from Text",
+      "abstract": "We present DALL-E, a 12-billion parameter version of GPT-3 trained to generate images from text descriptions, using a dataset of text-image pairs. We find that DALL-E is able to create plausible images for a great variety of sentences.",
+      "authors": ["Aditya Ramesh", "Mikhail Pavlov", "Gabriel Goh", "Scott Gray"],
+      "year": 2021,
+      "venue": "OpenAI",
+      "keywords": ["DALL-E", "Text-to-Image", "Generative Models", "Multimodal", "AI Art"],
+      "url": "https://openai.com/research/dall-e"
+    },
+    {
+      "id": "21",
+      "title": "AlphaGo: Mastering the Game of Go with Deep Neural Networks and Tree Search",
+      "abstract": "The game of Go has long been viewed as the most challenging of classic games for artificial intelligence due to its enormous search space and the difficulty of evaluating board positions and moves.",
+      "authors": ["David Silver", "Aja Huang", "Chris J. Maddison", "Arthur Guez"],
+      "year": 2016,
+      "venue": "Nature",
+      "keywords": ["AlphaGo", "Deep Learning", "Game AI", "Monte Carlo Tree Search", "Reinforcement Learning"],
+      "url": "https://www.nature.com/articles/nature16961"
+    },
+    {
+      "id": "22",
+      "title": "Neural Ordinary Differential Equations",
+      "abstract": "We introduce a new family of deep neural network models. Instead of specifying a discrete sequence of hidden layers, we parameterize the derivative of the hidden state using a neural network.",
+      "authors": ["Ricky T. Q. Chen", "Yulia Rubanova", "Jesse Bettencourt", "David Duvenaud"],
+      "year": 2018,
+      "venue": "NeurIPS",
+      "keywords": ["Neural ODEs", "Continuous Depth", "Differential Equations", "Deep Learning", "Dynamical Systems"],
+      "url": "https://arxiv.org/abs/1806.07366"
+    },
+    {
+      "id": "23",
+      "title": "Graph Neural Networks: A Review of Methods and Applications",
+      "abstract": "Many underlying relationships among data in several areas of science and engineering, e.g., computer vision, molecular physics, and social networks, can be represented in terms of graphs.",
+      "authors": ["Zonghan Wu", "Shirui Pan", "Fengwen Chen", "Guodong Long"],
+      "year": 2020,
+      "venue": "AI Open",
+      "keywords": ["Graph Neural Networks", "GNN", "Graph Learning", "Deep Learning", "Network Analysis"],
+      "url": "https://arxiv.org/abs/1812.08434"
+    },
+    {
+      "id": "24",
+      "title": "Federated Learning: Challenges, Methods, and Future Directions",
+      "abstract": "Federated learning is a machine learning technique that trains an algorithm across multiple decentralized edge devices or servers holding local data samples, without exchanging them.",
+      "authors": ["Qiang Yang", "Yang Liu", "Yong Cheng", "Yan Kang"],
+      "year": 2019,
+      "venue": "IEEE Signal Processing Magazine",
+      "keywords": ["Federated Learning", "Distributed Learning", "Privacy", "Edge Computing", "Machine Learning"],
+      "url": "https://arxiv.org/abs/1912.04977"
+    },
+    {
+      "id": "25",
+      "title": "Self-Supervised Learning: The Dark Matter of Intelligence",
+      "abstract": "Self-supervised learning has emerged as a powerful paradigm for learning representations from unlabeled data. This approach has shown remarkable success across various domains including computer vision, natural language processing, and speech recognition.",
+      "authors": ["Yann LeCun", "Ismael Belghazi", "Sai Rajeswar", "Soroush Mehri"],
+      "year": 2021,
+      "venue": "Nature Machine Intelligence",
+      "keywords": ["Self-Supervised Learning", "Representation Learning", "Unsupervised Learning", "Deep Learning", "SSL"],
+      "url": "https://www.nature.com/articles/s42256-021-00360-8"
+    }
+  ],
+  "metadata": {
+    "totalPapers": 50000,
+    "lastUpdated": "2024-12-19",
+    "vectorDimensions": 768,
+    "embeddingModel": "sentence-transformers/all-mpnet-base-v2",
+    "indexType": "HNSW",
+    "searchEngine": "HNSWlib"
+  }
+}
