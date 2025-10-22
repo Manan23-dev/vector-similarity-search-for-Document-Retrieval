@@ -82,7 +82,7 @@ async def health_check():
         }
     }
 
-# Vercel serverless handler
+# Render deployment handler
 handler = app
 
 if __name__ == "__main__":
