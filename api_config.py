@@ -1,8 +1,12 @@
 # API Configuration for Research Paper Data Sources
-# UPDATED: Support for IEEE Xplore and Springer APIs
+# UPDATED: Support for IEEE Xplore, Springer, and HuggingFace Inference (LLM)
 
 import os
 from typing import Dict, Any
+
+# Set HF_TOKEN in Render (or .env locally). Never commit the token.
+# Get a free token at https://huggingface.co/settings/tokens
+HF_TOKEN = os.getenv("HF_TOKEN", "")
 
 def get_api_config() -> Dict[str, Any]:
     """

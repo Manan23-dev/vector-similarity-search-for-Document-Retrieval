@@ -1,7 +1,8 @@
 // Vector Similarity Search Engine - Frontend Demo
 // UPDATED: Complete rewrite with all requested features
 
-// Configuration - UPDATED: Real dataset configuration
+// Configuration - Real API + fallback to local sample data
+// After deploying to Render, copy your app URL and replace below (e.g. https://YOUR-APP.onrender.com)
 const CONFIG = {
     API_BASE_URL: 'https://vector-similarity-search-for-document.onrender.com',
     LOCAL_URL: 'http://localhost:8000',
@@ -9,9 +10,9 @@ const CONFIG = {
     DEBOUNCE_DELAY: 200,
     SIMULATED_LATENCY_MIN: 100,
     SIMULATED_LATENCY_MAX: 200,
-    DATASET_SIZE: 50000,  // Real dataset size
-    VECTOR_DIMENSIONS: 768,  // all-mpnet-base-v2 dimensions
-    PRECISION: 95.2  // Simulated precision
+    DATASET_SIZE: 50000,
+    VECTOR_DIMENSIONS: 768,
+    PRECISION: 95.2
 };
 
 // Global state
@@ -21,6 +22,9 @@ let currentPage = 1;
 let totalPages = 1;
 let searchStartTime = 0;
 let isSearching = false;
+// ADDED: whether the Render backend API is reachable (used for banner + fallback)
+let apiReachable = false;
+let connectionBannerDismissed = false;
 
 // DOM elements
 const elements = {
@@ -39,7 +43,17 @@ const elements = {
     darkModeToggle: document.getElementById('darkModeToggle'),
     yearRange: document.getElementById('yearRange'),
     venueFilter: document.getElementById('venueFilter'),
-    authorFilter: document.getElementById('authorFilter')
+    authorFilter: document.getElementById('authorFilter'),
+    connectionBanner: document.getElementById('connectionBanner'),
+    connectionBannerText: document.getElementById('connectionBannerText'),
+    connectionBannerDismiss: document.getElementById('connectionBannerDismiss'),
+    qaInput: document.getElementById('qaInput'),
+    qaButton: document.getElementById('qaButton'),
+    qaResult: document.getElementById('qaResult'),
+    qaAnswerText: document.getElementById('qaAnswerText'),
+    qaSourcesList: document.getElementById('qaSourcesList'),
+    qaLoading: document.getElementById('qaLoading'),
+    qaError: document.getElementById('qaError')
 };
 
 // Utility functions
@@ -135,25 +149,81 @@ const utils = {
     }
 };
 
+// ADDED: Check if Render backend is reachable
+async function checkApiReachable() {
+    const url = `${CONFIG.API_BASE_URL}/api/stats`;
+    try {
+        const res = await fetch(url, { method: 'GET', signal: AbortSignal.timeout(8000) });
+        apiReachable = res.ok;
+    } catch (e) {
+        apiReachable = false;
+        console.warn('Backend API not reachable, using offline demo mode:', e.message);
+    }
+    updateConnectionBanner();
+}
+
+// ADDED: Update connection banner (Live vs Demo mode)
+function updateConnectionBanner() {
+    if (!elements.connectionBanner || connectionBannerDismissed) return;
+    elements.connectionBanner.classList.remove('hidden', 'demo-mode');
+    if (apiReachable) {
+        elements.connectionBannerText.textContent = 'Live mode: connected to vector search API';
+    } else {
+        elements.connectionBanner.classList.add('demo-mode');
+        elements.connectionBannerText.textContent = 'Demo mode: using local sample data';
+    }
+}
+
 // Data loader module
 const dataLoader = {
     async loadPapers() {
         try {
             const response = await fetch('assets/data/sample-papers.json');
             const data = await response.json();
-            papersData = data.papers;
+            papersData = data.papers || [];
             filteredPapers = [...papersData];
-            console.log(`Loaded ${papersData.length} papers`);
+            console.log(`Loaded ${papersData.length} papers (local fallback)`);
         } catch (error) {
             console.error('Error loading papers:', error);
             papersData = [];
             filteredPapers = [];
         }
+        await checkApiReachable();
     }
 };
 
-// Search engine module
+// Search engine module - UPDATED: try API first, fallback to local
 const searchEngine = {
+    // Call Render backend POST /api/search
+    async apiSearch(query, filters, topK = 50) {
+        const url = `${CONFIG.API_BASE_URL}/api/search`;
+        const res = await fetch(url, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ query: query.trim(), top_k: topK, threshold: 0 }),
+            signal: AbortSignal.timeout(15000)
+        });
+        if (!res.ok) throw new Error(res.statusText || 'Search failed');
+        const data = await res.json();
+        return data;
+    },
+
+    // Local token-based search (fallback when API fails or unreachable)
+    localSearch(query) {
+        if (!query.trim()) {
+            filteredPapers = [...papersData];
+            return filteredPapers;
+        }
+        const results = papersData.map(paper => {
+            const similarity = utils.calculateTokenSimilarity(paper, query);
+            return { ...paper, similarity };
+        });
+        filteredPapers = results
+            .filter(paper => paper.similarity > 0)
+            .sort((a, b) => b.similarity - a.similarity);
+        return filteredPapers;
+    },
+
     async search(query) {
         if (!query.trim()) {
             filteredPapers = [...papersData];
@@ -161,34 +231,40 @@ const searchEngine = {
         }
 
         searchStartTime = performance.now();
-        
-        // Simulate API latency
-        await utils.simulateLatency();
-        
-        // Calculate similarity scores
-        const results = papersData.map(paper => {
-            const similarity = utils.calculateTokenSimilarity(paper, query);
-            return {
-                ...paper,
-                similarity: similarity
-            };
-        });
 
-        // Sort by similarity (descending)
-        filteredPapers = results
-            .filter(paper => paper.similarity > 0)
-            .sort((a, b) => b.similarity - a.similarity);
-
-        // Update query speed metric
-        const queryTime = Math.round(performance.now() - searchStartTime);
-        elements.querySpeed.textContent = `${queryTime}ms`;
-        
-        // Update metrics panel with real data
-        document.getElementById('datasetSize').textContent = `${CONFIG.DATASET_SIZE.toLocaleString()}+`;
-        document.getElementById('vectorDims').textContent = `${CONFIG.VECTOR_DIMENSIONS}D`;
-        document.getElementById('precision').textContent = `${CONFIG.PRECISION}%`;
-
-        return filteredPapers;
+        try {
+            const data = await this.apiSearch(query, null, 100);
+            const queryTime = Math.round(performance.now() - searchStartTime);
+            elements.querySpeed.textContent = `${queryTime}ms`;
+            document.getElementById('datasetSize').textContent = (data.total_found || data.returned || 0).toLocaleString() + '+';
+            document.getElementById('vectorDims').textContent = `${CONFIG.VECTOR_DIMENSIONS}D`;
+            document.getElementById('precision').textContent = `${CONFIG.PRECISION}%`;
+            // Map API results to frontend paper shape
+            filteredPapers = (data.results || []).map(r => ({
+                id: r.document_id,
+                title: r.title || '',
+                authors: r.authors || [],
+                venue: r.venue || '',
+                year: r.year || null,
+                abstract: (r.document || '').split('[SEP]')[1] || r.document || '',
+                keywords: [],
+                url: r.url || '',
+                similarity: typeof r.score === 'number' ? r.score : 0
+            }));
+            return filteredPapers;
+        } catch (err) {
+            apiReachable = false;
+            updateConnectionBanner();
+            console.warn('Running in offline demo mode. API error:', err.message);
+            await utils.simulateLatency();
+            this.localSearch(query);
+            const queryTime = Math.round(performance.now() - searchStartTime);
+            elements.querySpeed.textContent = `${queryTime}ms`;
+            document.getElementById('datasetSize').textContent = `${CONFIG.DATASET_SIZE.toLocaleString()}+`;
+            document.getElementById('vectorDims').textContent = `${CONFIG.VECTOR_DIMENSIONS}D`;
+            document.getElementById('precision').textContent = `${CONFIG.PRECISION}%`;
+            return filteredPapers;
+        }
     },
 
     applyFilters() {
@@ -272,38 +348,29 @@ const ui = {
     },
 
     createResultCard(paper, query) {
-        const similarityPercent = (paper.similarity * 100).toFixed(1);
-        const highlightedTitle = utils.highlight(paper.title, query);
-        const highlightedAbstract = utils.highlight(paper.abstract, query);
-        
+        const similarityPercent = (paper.similarity != null ? paper.similarity * 100 : 0).toFixed(1);
+        const highlightedTitle = utils.highlight(paper.title || '', query);
+        const highlightedAbstract = utils.highlight(paper.abstract || '', query);
+        const authors = Array.isArray(paper.authors) ? paper.authors.join(', ') : '';
+        const keywords = Array.isArray(paper.keywords) ? paper.keywords : [];
         return `
-            <div class="result-card" data-paper-id="${paper.id}">
+            <div class="result-card" data-paper-id="${utils.sanitizeHtml(paper.id)}">
                 <div class="result-header">
                     <div class="result-title">${highlightedTitle}</div>
                     <div class="result-similarity">${similarityPercent}%</div>
                 </div>
-                
                 <div class="result-meta">
-                    <span>📅 ${paper.year}</span>
-                    <span>🏛️ ${paper.venue}</span>
-                    <span>📄 ${paper.id}</span>
+                    <span>${paper.year != null ? paper.year : '—'}</span>
+                    <span>${utils.sanitizeHtml(paper.venue || '')}</span>
+                    <span>${utils.sanitizeHtml(paper.id || '')}</span>
                 </div>
-                
-                <div class="result-authors">
-                    <strong>Authors:</strong> ${paper.authors.join(', ')}
-                </div>
-                
-                <div class="result-abstract">
-                    ${highlightedAbstract}
-                </div>
-                
+                <div class="result-authors"><strong>Authors:</strong> ${utils.sanitizeHtml(authors)}</div>
+                <div class="result-abstract">${highlightedAbstract}</div>
                 <div class="result-keywords">
-                    ${paper.keywords.map(keyword => 
-                        `<span class="keyword-tag">${utils.sanitizeHtml(keyword)}</span>`
-                    ).join('')}
+                    ${keywords.map(k => `<span class="keyword-tag">${utils.sanitizeHtml(k)}</span>`).join('')}
                 </div>
-        </div>
-    `;
+            </div>
+        `;
     },
 
     updatePagination(totalResults, currentPage) {
@@ -459,17 +526,73 @@ const eventHandlers = {
         // Dark mode toggle
         elements.darkModeToggle.addEventListener('click', () => darkMode.toggle());
 
-        // Result card clicks
+        // Result card clicks (support both API and local results)
         elements.resultsContainer.addEventListener('click', (e) => {
             const card = e.target.closest('.result-card');
             if (card) {
                 const paperId = card.dataset.paperId;
-                const paper = papersData.find(p => p.id === paperId);
+                const paper = filteredPapers.find(p => p.id === paperId) || papersData.find(p => p.id === paperId);
                 if (paper && paper.url) {
                     window.open(paper.url, '_blank');
                 }
             }
         });
+
+        // Connection banner dismiss
+        if (elements.connectionBannerDismiss) {
+            elements.connectionBannerDismiss.addEventListener('click', () => {
+                connectionBannerDismissed = true;
+                if (elements.connectionBanner) elements.connectionBanner.classList.add('hidden');
+            });
+        }
+
+        // Q&A: real POST /api/qa
+        if (elements.qaButton && elements.qaInput) {
+            elements.qaButton.addEventListener('click', () => qaHandlers.submit());
+            elements.qaInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') qaHandlers.submit();
+            });
+        }
+    }
+};
+
+// ADDED: Q&A handlers (calls Render /api/qa, displays answer and sources)
+const qaHandlers = {
+    async submit() {
+        const question = (elements.qaInput && elements.qaInput.value) ? elements.qaInput.value.trim() : '';
+        if (!question) return;
+        if (elements.qaError) { elements.qaError.style.display = 'none'; elements.qaError.textContent = ''; }
+        if (elements.qaResult) elements.qaResult.style.display = 'none';
+        if (elements.qaLoading) elements.qaLoading.style.display = 'block';
+
+        try {
+            const url = `${CONFIG.API_BASE_URL}/api/qa`;
+            const res = await fetch(url, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ query: question, top_k: 5 }),
+                signal: AbortSignal.timeout(30000)
+            });
+            if (!res.ok) throw new Error(res.statusText || 'Q&A failed');
+            const data = await res.json();
+            if (elements.qaAnswerText) elements.qaAnswerText.textContent = data.answer || '';
+            if (elements.qaSourcesList) {
+                const sources = data.sources || [];
+                elements.qaSourcesList.innerHTML = sources.map(s => {
+                    const title = (s.title || s.document_id || '').substring(0, 120);
+                    const url = s.url || '#';
+                    return `<div class="source-item"><a href="${url}" target="_blank" rel="noopener">${utils.sanitizeHtml(title)}</a> (${((s.score || 0) * 100).toFixed(1)}%)</div>`;
+                }).join('');
+            }
+            if (elements.qaResult) elements.qaResult.style.display = 'block';
+        } catch (err) {
+            if (elements.qaError) {
+                elements.qaError.textContent = 'Could not get answer. ' + (err.message || 'Network error. Try again or use demo mode.');
+                elements.qaError.style.display = 'block';
+            }
+        } finally {
+            if (elements.qaLoading) elements.qaLoading.style.display = 'none';
+        }
     }
 };
 

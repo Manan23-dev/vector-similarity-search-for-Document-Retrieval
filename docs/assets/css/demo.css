@@ -73,6 +73,44 @@ body {
     box-shadow: 0 6px 16px var(--shadow);
 }
 
+/* Connection mode banner - ADDED */
+.connection-banner {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 12px;
+    padding: 10px 44px 10px 16px;
+    font-size: 14px;
+    background: var(--info);
+    color: var(--text-primary);
+    border-bottom: 1px solid var(--border-color);
+}
+.connection-banner.demo-mode {
+    background: var(--warning);
+}
+.connection-banner.hidden {
+    display: none;
+}
+.connection-banner-dismiss {
+    position: absolute;
+    right: 12px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: transparent;
+    border: none;
+    font-size: 20px;
+    cursor: pointer;
+    padding: 0 6px;
+    line-height: 1;
+    color: var(--text-primary);
+}
+.connection-banner-dismiss:hover {
+    opacity: 0.8;
+}
+
 /* Container */
 .container {
     max-width: 1200px;
@@ -479,6 +517,42 @@ body {
 }
 
 /* Footer */
+/* Q&A section - ADDED */
+.qa-section {
+    margin: 32px 0;
+    padding: 24px;
+    background: var(--bg-secondary);
+    border-radius: 12px;
+    border: 1px solid var(--border-color);
+}
+.qa-section h2 { margin-bottom: 12px; }
+.qa-input-container {
+    display: flex;
+    gap: 12px;
+    margin-bottom: 16px;
+}
+.qa-input-container input {
+    flex: 1;
+    padding: 10px 14px;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    font-size: 1rem;
+}
+.qa-result .qa-answer,
+.qa-result .qa-sources { margin-top: 16px; }
+.qa-result .qa-answer h3,
+.qa-result .qa-sources h3 { margin-bottom: 8px; font-size: 1rem; }
+.qa-sources .source-item {
+    padding: 10px;
+    margin: 8px 0;
+    background: var(--bg-primary);
+    border-radius: 8px;
+    border: 1px solid var(--border-color);
+}
+.qa-sources .source-item a { color: var(--accent-primary); }
+.qa-loading, .qa-error { margin-top: 12px; }
+.qa-error { color: var(--danger); }
+
 .footer {
     margin-top: 40px;
     padding-top: 20px;

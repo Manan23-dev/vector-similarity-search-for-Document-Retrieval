@@ -420,9 +420,14 @@ class ResearchPaperDataLoader:
             )
             all_papers.extend(synthetic_papers)
         
-        # Remove duplicates and assign unique IDs
+        # Remove duplicates and cap total size (MAX_PAPERS env, default 5000 for fast cold start)
         unique_papers = self._deduplicate_papers(all_papers)
-        
+        max_papers = int(os.getenv("MAX_PAPERS", "5000"))
+        if os.getenv("FULL_DATASET", "").lower() == "true":
+            max_papers = max(max_papers, 50000)
+        if len(unique_papers) > max_papers:
+            unique_papers = unique_papers[:max_papers]
+            logger.info(f"Capped to {max_papers} papers (set FULL_DATASET=true for full 50k+)")
         logger.info(f"Total papers loaded: {len(unique_papers)}")
         return unique_papers
     

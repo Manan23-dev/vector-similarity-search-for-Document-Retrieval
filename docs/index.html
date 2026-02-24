@@ -10,6 +10,11 @@
     <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🔍</text></svg>">
 </head>
 <body>
+    <!-- Connection mode banner: Live (API) vs Demo (local). Dismissable. -->
+    <div id="connectionBanner" class="connection-banner" role="status" aria-live="polite">
+        <span id="connectionBannerText"></span>
+        <button id="connectionBannerDismiss" class="connection-banner-dismiss" aria-label="Dismiss">×</button>
+    </div>
     <!-- Dark mode toggle -->
     <button id="darkModeToggle" class="dark-mode-toggle" aria-label="Toggle dark mode">
         <span class="toggle-icon">🌙</span>
@@ -109,6 +114,27 @@
                     </div>
                 </div>
             </div>
+        </section>
+
+        <!-- Q&A Section - ADDED: displays answer and sources from /api/qa -->
+        <section class="qa-section" id="qaSection">
+            <h2>Ask a question</h2>
+            <div class="qa-input-container">
+                <input type="text" id="qaInput" placeholder="e.g. What is agentic AI?" aria-label="Question for research papers">
+                <button id="qaButton" class="search-btn" aria-label="Get answer">Get answer</button>
+            </div>
+            <div id="qaResult" class="qa-result" style="display: none;">
+                <div class="qa-answer">
+                    <h3>Answer</h3>
+                    <p id="qaAnswerText"></p>
+                </div>
+                <div class="qa-sources">
+                    <h3>Source papers</h3>
+                    <div id="qaSourcesList"></div>
+                </div>
+            </div>
+            <div id="qaLoading" class="qa-loading" style="display: none;">Loading...</div>
+            <div id="qaError" class="qa-error" style="display: none;"></div>
         </section>
 
         <!-- Results Section -->

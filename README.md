@@ -135,8 +135,8 @@ pip install -r requirements.txt
 
 ### **3. Initialize Dataset & Index**
 ```bash
-# Load 50,000+ papers and build HNSWlib index
-python initialize_dataset.py
+# Build index with 5000 papers (fast). Use --max-papers 50000 for full dataset.
+python initialize_dataset.py --max-papers 5000
 ```
 
 ### **4. Start Backend**
@@ -207,7 +207,8 @@ DATA_CONFIG = {
 | `/api/search` | POST | Vector similarity search |
 | `/api/qa` | POST | Question answering with RAG |
 | `/api/stats` | GET | Index statistics |
-| `/health` | GET | Health check |
+| `/health` | GET | Root health check |
+| `/api/health` | GET | API health: index size, papers loaded, `llm_configured` |
 | `/docs` | GET | Interactive API documentation |
 
 ### **Search Example**
@@ -230,17 +231,23 @@ curl -X POST "http://localhost:8000/api/search" \
 
 ## 🚀 Deployment
 
+See **`DEPLOY.md`** for the full checklist. Summary:
+
 ### **Backend (Render)**
-1. Connect GitHub repository
-2. Set build command: `pip install -r requirements.txt`
-3. Set start command: `uvicorn main:app --host 0.0.0.0 --port $PORT`
-4. Deploy
+
+| Setting | Value |
+|--------|--------|
+| **Build Command** | `pip install -r requirements.txt && python initialize_dataset.py --max-papers 5000` |
+| **Start Command** | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
+
+Optional env vars: `HF_TOKEN` (HuggingFace token — [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)), `MAX_PAPERS`, `FULL_DATASET=true`.
+
+### **Two manual steps**
+1. **HuggingFace:** Create a free Read token → in Render add env var **`HF_TOKEN`** with that value.
+2. **Frontend URL:** After deploying, copy your Render app URL → in **`docs/assets/js/demo.js`** set `CONFIG.API_BASE_URL` to it (e.g. `https://your-app.onrender.com`), then push.
 
 ### **Frontend (GitHub Pages)**
-1. Push to `master` branch
-2. Enable GitHub Pages in repository settings
-3. Set source to `/docs` folder
-4. Access at `https://username.github.io/repository-name/docs/`
+Enable Pages from branch, folder **`/docs`**. Live URL: `https://<username>.github.io/vector-similarity-search-for-Document-Retrieval/docs/`
 
 ## 🧪 Testing
 

@@ -4,6 +4,7 @@ from typing import List, Dict, Any, Optional
 import logging
 import os
 import sys
+import requests
 from pathlib import Path
 
 # Add project root to path
@@ -12,6 +13,7 @@ sys.path.append(str(Path(__file__).parent.parent.parent))
 from src.embeddings.embedder import Embedder
 from src.index.index_manager import IndexManager
 from data_loader import ResearchPaperDataLoader, DATA_CONFIG
+from api_config import HF_TOKEN
 
 # Configure logging
 logging.basicConfig(level=logging.INFO)
@@ -57,35 +59,43 @@ class QAResponse(BaseModel):
 
 # Load documents and build index
 def initialize_index():
-    """Initialize the vector index with real research papers."""
+    """
+    Initialize the vector index: load from disk if valid, else build from sources.
+    Uses MAX_PAPERS (default 5000) unless FULL_DATASET=true for faster cold start on Render.
+    """
     try:
-        logger.info("🚀 Initializing vector index with real research papers...")
-        
-        # Try to load existing index first
+        logger.info("Initializing vector index...")
+        index_path = Path("data/vector_index")
+        index_file = index_path / "hnswlib_index.bin"
+        metadata_file = index_path / "metadata.json"
+
+        # Fast path: load existing index if present and valid
         if index_manager.load_index():
-            logger.info(f"✅ Loaded existing index with {len(index_manager.documents)} papers")
+            n = len(index_manager.documents)
+            logger.info("Loaded existing index with %d papers (fast path)", n)
             return True
-        
-        # Load papers from all sources
+
+        # Build path: reduced dataset by default for free Render cold start
+        max_papers = 5000
+        if os.getenv("FULL_DATASET", "").lower() == "true":
+            max_papers = 50000
+        os.environ.setdefault("MAX_PAPERS", str(max_papers))
+        logger.info("Building index from sources (max_papers=%s)", os.environ.get("MAX_PAPERS"))
+
         data_loader = ResearchPaperDataLoader("data")
         papers = data_loader.load_all_sources(DATA_CONFIG)
-        
+
         if not papers:
-            logger.error("❌ No papers loaded from any source")
+            logger.error("No papers loaded from any source")
             return False
-        
-        logger.info(f"📚 Loaded {len(papers)} papers from data sources")
-        
-        # Generate embeddings for all papers
-        logger.info("🔄 Generating embeddings...")
+
+        logger.info("Loaded %d papers from data sources", len(papers))
+
+        logger.info("Generating embeddings...")
         embeddings = embedder.generate_paper_embeddings(papers)
-        
-        # Extract document IDs and texts
-        document_ids = [paper["id"] for paper in papers]
-        documents = [f"{paper['title']} [SEP] {paper['abstract']}" for paper in papers]
-        
-        # Add to HNSWlib index
-        logger.info("🔍 Building HNSWlib vector index...")
+
+        document_ids = [p["id"] for p in papers]
+        logger.info("Building HNSWlib vector index...")
         index_manager.add_embeddings(
             embeddings=embeddings,
             document_ids=document_ids,
@@ -93,18 +103,13 @@ def initialize_index():
             ef_construction=200,
             M=16
         )
-        
-        # Save the index
         index_manager.save_index()
-        
-        logger.info(f"✅ Index initialized successfully with {len(papers)} papers")
-        logger.info(f"📊 Embedding dimension: {embedder.get_embedding_dimension()}")
-        logger.info(f"🎯 Index type: HNSWlib")
-        
+
+        logger.info("Index initialized successfully with %d papers", len(papers))
         return True
-        
+
     except Exception as e:
-        logger.error(f"❌ Failed to initialize index: {e}")
+        logger.error("Failed to initialize index: %s", e)
         return False
 
 # Initialize index on startup
@@ -209,9 +214,9 @@ async def question_answering(request: SearchRequest):
             ))
             context_parts.append(f"Title: {doc['title']}\nAbstract: {doc['abstract']}")
         
-        # Generate answer (simplified - in production use LangChain + LLM)
+        # Generate answer via HuggingFace Inference API (or fallback to keyword-based)
         context = "\n\n".join(context_parts)
-        answer = generate_simple_answer(request.query, context)
+        answer = generate_llm_answer(request.query, context)
         
         return QAResponse(
             question=request.query,
@@ -224,23 +229,70 @@ async def question_answering(request: SearchRequest):
         logger.error(f"❌ Q&A failed: {e}")
         raise HTTPException(status_code=500, detail=f"Q&A failed: {str(e)}")
 
+
+def generate_llm_answer(question: str, context: str) -> str:
+    """
+    Call HuggingFace Inference API for free-tier LLM answer.
+    Falls back to generate_simple_answer if HF_TOKEN is not set.
+    """
+    if not HF_TOKEN or not HF_TOKEN.strip():
+        logger.warning("HF_TOKEN not set; using keyword-based answer fallback")
+        return generate_simple_answer(question, context)
+    
+    # Prefer smaller/faster model for free tier; optional: HuggingFaceH4/zephyr-7b-beta
+    model_id = "mistralai/Mistral-7B-Instruct-v0.2"
+    url = f"https://api-inference.huggingface.co/models/{model_id}"
+    headers = {"Authorization": f"Bearer {HF_TOKEN}", "Content-Type": "application/json"}
+    # Truncate context to avoid token limits
+    context_trim = context[:3000] if len(context) > 3000 else context
+    prompt = (
+        "Based on the following research paper excerpts, answer the question in one or two short paragraphs. Be concise.\n\n"
+        f"Context:\n{context_trim}\n\nQuestion: {question}\n\nAnswer:"
+    )
+    payload = {"inputs": prompt, "parameters": {"max_new_tokens": 256, "temperature": 0.3}}
+    
+    try:
+        r = requests.post(url, json=payload, headers=headers, timeout=60)
+        r.raise_for_status()
+        data = r.json()
+        if isinstance(data, list) and len(data) > 0 and "generated_text" in data[0]:
+            return (data[0]["generated_text"] or "").strip()
+        if isinstance(data, dict) and "generated_text" in data:
+            return (data["generated_text"] or "").strip()
+        return generate_simple_answer(question, context)
+    except Exception as e:
+        logger.warning("HuggingFace Inference API failed, using fallback: %s", e)
+        return generate_simple_answer(question, context)
+
+
 def generate_simple_answer(question: str, context: str) -> str:
-    """Generate a simple answer based on context (placeholder for LangChain + LLM)."""
-    # This is a simplified implementation
-    # In production, you'd use LangChain with GPT-4, Claude, or other LLMs
-    
+    """Keyword-based fallback when HF_TOKEN is not set or API fails."""
     question_lower = question.lower()
-    
     if "agentic" in question_lower or "agent" in question_lower:
-        return "Based on the research papers, agentic AI refers to AI systems that can act autonomously and make decisions independently. These systems are designed to operate with minimal human intervention and can adapt to new situations."
-    
+        return "Based on the research papers, agentic AI refers to AI systems that can act autonomously and make decisions independently."
     if "machine learning" in question_lower:
-        return "Machine learning is a subset of artificial intelligence that focuses on algorithms that can learn from data. The research shows various applications in data science, classification, and neural networks."
-    
+        return "Machine learning is a subset of AI that focuses on algorithms that can learn from data."
     if "deep learning" in question_lower:
-        return "Deep learning involves neural networks with multiple layers that can learn complex patterns. The research covers various architectures, activation functions, and applications."
-    
-    return f"Based on the research papers, {question} is an important topic in artificial intelligence. The papers provide insights into various approaches and applications in this field."
+        return "Deep learning involves neural networks with multiple layers that can learn complex patterns."
+    return f"Based on the research papers, {question} is an important topic. The retrieved excerpts provide relevant context."
+
+@router.get("/health")
+async def api_health():
+    """Health check with index size, papers loaded, and LLM config status."""
+    try:
+        stats = index_manager.get_stats() if index_manager.is_initialized else {}
+        n_papers = len(index_manager.documents) if index_manager.is_initialized else 0
+        llm_configured = bool(HF_TOKEN and HF_TOKEN.strip())
+        return {
+            "status": "healthy",
+            "index_initialized": index_manager.is_initialized,
+            "papers_loaded": n_papers,
+            "llm_configured": llm_configured,
+        }
+    except Exception as e:
+        logger.exception("Health check failed")
+        return {"status": "unhealthy", "error": str(e)}
+
 
 @router.get("/stats")
 async def get_index_stats():

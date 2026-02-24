@@ -1,36 +1,38 @@
 #!/usr/bin/env python3
 """
 Dataset Loading and Index Initialization Script
-UPDATED: Load real datasets and initialize HNSWlib index with 50,000+ papers
+Run as Render build step: python initialize_dataset.py --max-papers 5000
 """
 
+import argparse
 import os
 import sys
 import logging
 from pathlib import Path
 
-# Add src to path
-sys.path.append(str(Path(__file__).parent / "src"))
+# Add project root to path
+sys.path.insert(0, str(Path(__file__).parent))
 
 from data_loader import ResearchPaperDataLoader, DATA_CONFIG
 from src.embeddings.embedder import Embedder
 from src.index.index_manager import IndexManager
 
-# Configure logging
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
+
 def main():
-    """Main function to load dataset and initialize vector index"""
-    
-    logger.info("Starting dataset loading and index initialization")
-    
-    # Initialize components
+    parser = argparse.ArgumentParser(description="Build research papers dataset and HNSW index")
+    parser.add_argument("--max-papers", type=int, default=5000, help="Cap total papers (default 5000)")
+    args = parser.parse_args()
+
+    os.environ["MAX_PAPERS"] = str(args.max_papers)
+    logger.info("Starting dataset loading and index initialization (max_papers=%s)", args.max_papers)
+
     data_loader = ResearchPaperDataLoader("data")
-    embedder = Embedder("all-mpnet-base-v2")  # 768 dimensions
-    index_manager = IndexManager(embedder.embedding_dim, "data/vector_index")
-    
-    # Load papers from all sources
+    embedder = Embedder("all-mpnet-base-v2")
+    index_manager = IndexManager(embedder.get_embedding_dimension(), "data/vector_index")
+
     logger.info("Loading papers from configured sources...")
     papers = data_loader.load_all_sources(DATA_CONFIG)
     
