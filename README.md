@@ -1,6 +1,6 @@
 # Vector Similarity Search Engine - Research Paper Discovery
 
-A scalable RAG-based system with LangChain and Hugging Face, enabling automated document retrieval and intelligent question-answering for large collections of text. **Supports 50,000+ research papers with real-time vector search.**
+A scalable RAG-based system with LangChain and Hugging Face, enabling automated document retrieval and question-answering for large collections of text. **Supports 50,000+ research papers with real-time vector search.**
 
 ## 🚀 Live Demo
 
