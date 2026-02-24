@@ -1,6 +1,6 @@
 # Deployment Checklist
 
-Open this repo in Cursor (or your editor) from the **repository root** so that `main.py` is visible at the top level (not just a subfolder).
+Open the **repository root** in your editor so that `main.py` is visible at the top level (not just a subfolder).
 
 ---
 
