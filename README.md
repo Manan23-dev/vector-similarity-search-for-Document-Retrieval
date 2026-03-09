@@ -207,6 +207,8 @@ DATA_CONFIG = {
 | `/api/search` | POST | Vector similarity search |
 | `/api/qa` | POST | Question answering with RAG |
 | `/api/stats` | GET | Index statistics |
+| `/api/eval` | GET | Retrieval & response evaluation metrics |
+| `/api/tune` | GET | Tune HNSW ef parameter (ef_min, ef_max, ef_step) |
 | `/health` | GET | Root health check |
 | `/api/health` | GET | API health: index size, papers loaded, `llm_configured` |
 | `/docs` | GET | Interactive API documentation |
@@ -218,16 +220,38 @@ curl -X POST "http://localhost:8000/api/search" \
      -d '{"query": "transformer attention", "top_k": 10, "threshold": 0.7}'
 ```
 
-## 📈 Performance Metrics
+## 📈 Performance & Evaluation Metrics
 
 | Metric | Value | Description |
 |--------|-------|-------------|
 | **Dataset Size** | 50,000+ papers | Total research papers |
 | **Vector Dimensions** | 768D | all-mpnet-base-v2 embeddings |
 | **Search Speed** | <100ms | Average query latency |
-| **Precision** | 95.2% | Search accuracy (simulated) |
 | **Index Type** | HNSWlib | Hierarchical Navigable Small World |
 | **Memory Usage** | ~500MB | Total system memory |
+
+### **Retrieval & Response Evaluation**
+
+Evaluated ranking quality and downstream decision impact using retrieval and response-level metrics.
+
+Run `python evaluate.py` or `GET /api/eval` to measure:
+
+- **Recall@k** (k=1,5,10): Fraction of relevant docs in top-k
+- **MRR**: Mean Reciprocal Rank
+- **NDCG@10**: Normalized Discounted Cumulative Gain
+- **Faithfulness**: Does the answer stay grounded in context?
+- **Relevance**: Does the answer address the question?
+
+Eval queries: `evaluation/eval_queries.json`. Customize for your labeled dataset.
+
+### **Efficiency Optimizations**
+
+| Optimization | Description |
+|--------------|-------------|
+| **Embedding cache** | LRU cache (500 queries) for repeated search terms. Check `/api/stats` for hit rate. |
+| **Connection pooling** | `requests.Session` for HuggingFace API; reuses TCP connections. |
+| **Index tuning** | `GET /api/tune?ef_min=40&ef_max=80` or `python evaluate.py --tune-ef` to find best HNSW `ef`. |
+| **Batch preprocessing** | Set `FREQUENT_QUERIES='["machine learning","transformer"]'` to prewarm cache on startup. |
 
 ## 🚀 Deployment
 
@@ -237,10 +261,11 @@ See **`DEPLOY.md`** for the full checklist. Summary:
 
 | Setting | Value |
 |--------|--------|
-| **Build Command** | `pip install -r requirements.txt && python initialize_dataset.py --max-papers 5000` |
+| **Runtime** | `Python 3.11` |
+| **Build Command** | `./build.sh` |
 | **Start Command** | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
 
-Optional env vars: `HF_TOKEN` (HuggingFace token — [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)), `MAX_PAPERS`, `FULL_DATASET=true`.
+Optional env vars: `HF_TOKEN` (HuggingFace token — [huggingface.co/settings/tokens](https://huggingface.co/settings/tokens)), `MAX_PAPERS`, `FULL_DATASET=true`, `FREQUENT_QUERIES` (JSON list, e.g. `["machine learning","transformer"]` for batch prewarming).
 
 ### **Two manual steps**
 1. **HuggingFace:** Create a free Read token → in Render add env var **`HF_TOKEN`** with that value.

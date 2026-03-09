@@ -1,30 +1,33 @@
+-c constraints.txt
+
 # Core FastAPI dependencies
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-python-multipart==0.0.6
-pydantic==2.5.0
+fastapi
+uvicorn[standard]
+python-multipart
+pydantic
 
 # Vector search and embeddings
-sentence-transformers==2.2.2
-hnswlib==0.7.0
-numpy==1.24.4
-torch==2.1.0
-transformers==4.35.0
+sentence-transformers
+hnswlib
+numpy
+torch
+torchvision
+transformers
 
 # Data processing and loading
-pandas==2.0.3
-requests==2.31.0
-tqdm==4.66.1
+pandas
+requests
+tqdm
 
 # Hugging Face datasets
-datasets==2.14.6
+datasets
 
 # Kaggle API
-kaggle==1.5.16
+kaggle
 
 # arXiv API
-arxiv==2.1.0
+arxiv
 
 # Additional utilities
-pathlib2==2.3.7
-python-dateutil==2.8.2
+pathlib2
+python-dateutil

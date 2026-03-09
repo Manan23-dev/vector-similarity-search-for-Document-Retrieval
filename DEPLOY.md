@@ -8,7 +8,8 @@ Open the **repository root** in your editor so that `main.py` is visible at the 
 
 | Setting | Value |
 |--------|--------|
-| **Build Command** | `pip install -r requirements.txt && python initialize_dataset.py --max-papers 5000` |
+| **Runtime** | `Python 3.11` (from `runtime.txt`) |
+| **Build Command** | `./build.sh` |
 | **Start Command** | `uvicorn main:app --host 0.0.0.0 --port $PORT` |
 
 ---
@@ -22,6 +23,9 @@ Open the **repository root** in your editor so that `main.py` is visible at the 
 - In **Render** → your service → **Environment** → add:
   - **Key:** `HF_TOKEN`
   - **Value:** (paste your token)
+- Optional performance env vars:
+  - `MAX_PAPERS=5000` (or higher)
+  - `FREQUENT_QUERIES=["machine learning","transformer"]`
 - Save and redeploy if the service was already deployed
 
 ### 2. Point frontend at your backend
@@ -33,3 +37,32 @@ Open the **repository root** in your editor so that `main.py` is visible at the 
 - Commit and push so GitHub Pages serves the updated frontend
 
 If the URL is wrong or the backend is down, the site will show **Demo mode** (local sample data) instead of **Live mode**.
+
+---
+
+## Staging, cutover, rollback
+
+### Staging validation checklist
+
+1. Deploy a separate Render staging service from the same branch.
+2. Verify:
+   - `GET /health`
+   - `GET /api/health`
+   - `POST /api/search`
+   - `POST /api/qa`
+   - `GET /api/eval`
+   - `GET /api/tune`
+3. Confirm build logs show index initialization succeeded.
+4. Confirm response latency is acceptable after warmup.
+
+### Production cutover
+
+1. Keep current production service running.
+2. Update frontend `CONFIG.API_BASE_URL` to staging URL only after all checks pass.
+3. Monitor logs/errors for 10-15 minutes.
+
+### Rollback
+
+1. Revert frontend `CONFIG.API_BASE_URL` to previous production backend URL.
+2. Scale down or pause the new service.
+3. Redeploy previous known-good commit if needed.

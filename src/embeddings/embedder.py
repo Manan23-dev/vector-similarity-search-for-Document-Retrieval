@@ -1,6 +1,6 @@
 import logging
 from sentence_transformers import SentenceTransformer
-from typing import List, Union, Dict, Any
+from typing import List, Union, Dict, Any, Optional
 import numpy as np
 from tqdm import tqdm
 import torch
@@ -11,20 +11,31 @@ from pathlib import Path
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
+
 class Embedder:
-    def __init__(self, model_name: str = "all-mpnet-base-v2"):
+    def __init__(self, model_name: str = "all-mpnet-base-v2", use_cache: bool = True, cache_size: int = 500):
         """
         Initialize the embedder with a sentence transformer model.
         UPDATED: Using all-mpnet-base-v2 for better performance (768 dimensions)
         
         Args:
             model_name: Name of the sentence transformer model to use
+            use_cache: Enable LRU cache for query embeddings (reduces latency on repeated queries)
+            cache_size: Max cached query embeddings when use_cache=True
         """
         try:
             self.model_name = model_name
             self.model = SentenceTransformer(model_name, device='cpu')
             self.embedding_dim = self.get_embedding_dimension()
-            logger.info(f"Initialized embedder with model: {model_name}")
+            self._use_cache = use_cache
+            self._cache = None
+            if use_cache:
+                try:
+                    from src.utils.embedding_cache import EmbeddingCache
+                    self._cache = EmbeddingCache(max_size=cache_size)
+                except ImportError:
+                    pass
+            logger.info(f"Initialized embedder with model: {model_name} (cache={'on' if self._cache else 'off'})")
             logger.info(f"Embedding dimension: {self.embedding_dim}")
         except Exception as e:
             logger.error(f"Failed to initialize embedder: {e}")
@@ -32,15 +43,17 @@ class Embedder:
     
     def generate_embeddings(self, texts: Union[str, List[str]], 
                           batch_size: int = 32, 
-                          show_progress: bool = True) -> np.ndarray:
+                          show_progress: bool = True,
+                          use_cache: Optional[bool] = None) -> np.ndarray:
         """
         Generate embeddings for the given text(s).
-        UPDATED: Optimized for large-scale processing
+        UPDATED: Optimized for large-scale processing with query embedding cache.
         
         Args:
             texts: Single text string or list of text strings
             batch_size: Batch size for processing
             show_progress: Whether to show progress bar
+            use_cache: Override instance cache setting (None = use instance default)
             
         Returns:
             Numpy array of embeddings
@@ -51,6 +64,40 @@ class Embedder:
             
             if not texts:
                 return np.array([])
+            
+            cache = self._cache if (use_cache if use_cache is not None else self._use_cache) else None
+            if cache and len(texts) == 1:
+                cached = cache.get(texts[0])
+                if cached is not None:
+                    return cached
+            elif cache and len(texts) > 1 and len(texts) <= 20:
+                results = []
+                to_compute = []
+                to_compute_idx = []
+                for i, t in enumerate(texts):
+                    c = cache.get(t)
+                    if c is not None:
+                        results.append((i, c))
+                    else:
+                        to_compute.append(t)
+                        to_compute_idx.append(i)
+                if not to_compute:
+                    return np.vstack([r[1] for r in sorted(results, key=lambda x: x[0])])
+                computed = self.model.encode(
+                    to_compute,
+                    convert_to_numpy=True,
+                    show_progress_bar=show_progress,
+                    batch_size=batch_size,
+                )
+                for j, emb in enumerate(computed):
+                    cache.set(to_compute[j], emb.reshape(1, -1) if emb.ndim == 1 else emb)
+                idx_to_emb = {to_compute_idx[j]: computed[j] for j in range(len(computed))}
+                combined = [None] * len(texts)
+                for i, emb in results:
+                    combined[i] = emb if emb.ndim == 2 else emb.reshape(1, -1)
+                for i, emb in idx_to_emb.items():
+                    combined[i] = emb.reshape(1, -1) if emb.ndim == 1 else emb
+                return np.vstack(combined)
             
             logger.info(f"Generating embeddings for {len(texts)} texts")
             
@@ -76,6 +123,8 @@ class Embedder:
                 )
             
             logger.info(f"Generated embeddings with shape: {embeddings.shape}")
+            if cache and len(texts) == 1:
+                cache.set(texts[0], embeddings)
             return embeddings
             
         except Exception as e:
@@ -142,9 +191,12 @@ class Embedder:
     
     def get_model_info(self) -> Dict[str, Any]:
         """Get information about the current model"""
-        return {
+        info = {
             "model_name": self.model_name,
             "embedding_dimension": self.embedding_dim,
             "max_seq_length": self.model.max_seq_length,
-            "device": str(self.model.device)
+            "device": str(self.model.device),
         }
+        if self._cache:
+            info["embedding_cache"] = self._cache.stats()
+        return info

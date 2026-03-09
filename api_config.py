@@ -8,6 +8,22 @@ from typing import Dict, Any
 # Get a free token at https://huggingface.co/settings/tokens
 HF_TOKEN = os.getenv("HF_TOKEN", "")
 
+# Precompute embeddings for these queries on startup (JSON list, e.g. '["machine learning","transformer"]')
+# Speeds up first search for popular terms
+FREQUENT_QUERIES_JSON = os.getenv("FREQUENT_QUERIES", "[]")
+
+
+def get_frequent_queries() -> list:
+    """Parse frequent queries from env for batch preprocessing."""
+    try:
+        import json as _json
+        q = _json.loads(FREQUENT_QUERIES_JSON)
+        return q if isinstance(q, list) else []
+    except Exception:
+        return []
+
+
+
 def get_api_config() -> Dict[str, Any]:
     """
     Get API configuration with environment variables for security

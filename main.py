@@ -63,7 +63,9 @@ async def root():
             "POST /api/search": "Vector similarity search",
             "POST /api/qa": "Question answering with RAG",
             "GET /api/stats": "Index statistics",
-            "POST /api/reindex": "Rebuild vector index"
+            "GET /api/eval": "Retrieval & response evaluation metrics",
+            "GET /api/tune": "Tune HNSW ef parameter via evaluation",
+            "POST /api/rebuild": "Rebuild vector index"
         },
         "docs_url": "/docs"
     }

@@ -1,5 +1,5 @@
 # Multi-stage build for optimized Docker image
-FROM python:3.9-slim as builder
+FROM python:3.11-slim as builder
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -13,11 +13,11 @@ RUN apt-get update && apt-get install -y \
     && rm -rf /var/lib/apt/lists/*
 
 # Copy requirements and install Python dependencies
-COPY requirements.txt .
+COPY requirements.txt constraints.txt ./
 RUN pip install --no-cache-dir --user -r requirements.txt
 
 # Production stage
-FROM python:3.9-slim
+FROM python:3.11-slim
 
 # Set environment variables
 ENV PYTHONUNBUFFERED=1
@@ -34,13 +34,12 @@ COPY --from=builder /root/.local /root/.local
 # Set working directory
 WORKDIR /app
 
-# Copy application code (no example_data; sample data path used by config)
+# Copy application code
 COPY src/ ./src/
 COPY main.py .
 COPY data_loader.py .
 COPY initialize_dataset.py .
 COPY api_config.py .
-COPY docs/assets/data/sample-papers.json docs/assets/data/
 
 # Pre-build a small index so the image starts without rebuilding (max 1000 papers)
 ENV MAX_PAPERS=1000
@@ -57,5 +56,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=30s --start-period=40s --retries=3 \
     CMD curl -f http://localhost:8000/health || exit 1
 
-# Run the application
-CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8000"]
+# Run the application (Render and local compatible)
+CMD ["sh", "-c", "uvicorn main:app --host 0.0.0.0 --port ${PORT:-8000}"]

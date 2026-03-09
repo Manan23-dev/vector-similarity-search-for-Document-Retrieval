@@ -41,9 +41,7 @@ assets/
 index.html
 test.html
 
-# Deployment files
-.vercel/
-vercel.json
+# Deployment files (Render-specific; not needed in image)
 Procfile
 build.sh
 runtime.txt

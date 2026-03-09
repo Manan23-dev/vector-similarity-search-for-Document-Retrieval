@@ -1,0 +1,27 @@
+[
+  {
+    "query": "transformer attention mechanism",
+    "relevant_ids": ["1", "2"],
+    "relevance": {"1": 3, "2": 2}
+  },
+  {
+    "query": "residual connections deep learning",
+    "relevant_ids": ["3"],
+    "relevance": {"3": 3}
+  },
+  {
+    "query": "generative adversarial networks",
+    "relevant_ids": ["4"],
+    "relevance": {"4": 3}
+  },
+  {
+    "query": "object detection real-time",
+    "relevant_ids": ["5"],
+    "relevance": {"5": 3}
+  },
+  {
+    "query": "language model pre-training",
+    "relevant_ids": ["1", "2"],
+    "relevance": {"1": 2, "2": 3}
+  }
+]
